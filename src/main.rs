@@ -67,7 +67,7 @@ fn hash_password(password: &str) -> anyhow::Result<String> {
 }
 
 /// TODO store the password securely.
-/// TODO: token login. Needs changes to the web app.
+/// TODO LTI/OAuth2 login
 fn login(username: &str) -> anyhow::Result<()> {
     let password = rpassword::prompt_password("Password: ")?;
     println!("your password: {}", password);
@@ -85,6 +85,7 @@ fn main() {
                 dbg!(cli);
             }
         }
+
         Some(Commands::Login { username }) => {
             let _ = login(username);
         }
@@ -93,4 +94,10 @@ fn main() {
 
         _ => {}
     }
+
+    // random token with ASCII characters
+    // let token = rand::thread_rng()
+    //     .sample_iter(&rand::distributions::Alphanumeric)
+    //     .take(30)
+    //     .collect::<String>();
 }
