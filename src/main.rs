@@ -1,7 +1,7 @@
 mod auth;
 mod config;
 
-use std::{collections::HashMap, default, path::PathBuf};
+use std::{collections::HashMap, default, fmt::format, path::PathBuf};
 
 use clap::{Parser, Subcommand};
 
@@ -10,6 +10,7 @@ use argon2::{
     Argon2,
 };
 use config::Config;
+use reqwest::header;
 
 #[derive(Debug, Parser)]
 struct Cli {
@@ -54,6 +55,26 @@ fn check_if_configured() -> anyhow::Result<()> {
     if cfg.user.is_empty() || cfg.course.is_empty() || cfg.host.is_empty() {
         anyhow::bail!("Please configure the CLI first");
     }
+
+    Ok(())
+}
+
+/// send a request to the SmartBeans API with the authorization header
+/// `Authorization: Bearer <session token>`
+fn send_with_authorization_header() -> anyhow::Result<()> {
+    let cfg = Config::load().unwrap();
+
+    let client = reqwest::blocking::Client::new();
+
+    let res = client
+        .get(&cfg.host)
+        .header(
+            header::AUTHORIZATION,
+            format!("Bearer {}", cfg.token.unwrap()),
+        )
+        .send()?;
+
+    dbg!(res);
 
     Ok(())
 }
