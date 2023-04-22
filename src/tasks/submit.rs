@@ -5,13 +5,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::config::Config;
 
-/// Reads the metadata of an exercise located at `path`
-/// The metadata is stored in a .meta file in the same directory as the exercise,
-/// or in a comment at the top of the exercise file "task: <task_id>"
-fn read_exercise_with_metadata(path: PathBuf) -> anyhow::Result<()> {
-    todo!()
-}
-
 #[derive(Debug, Deserialize)]
 struct SubmissionResult {
     user: String,
@@ -27,12 +20,12 @@ struct SubmissionResult {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct Simplified {
+struct Simplified {
     compiler: Compiler,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct Compiler {
+struct Compiler {
     stdout: String,
     exitCode: i32,
 }
@@ -79,30 +72,6 @@ pub fn submit_task(task_id: isize, path: PathBuf) -> anyhow::Result<()> {
         }
     } else {
         dbg!(res);
-        return Err(anyhow::anyhow!("Response indicates failure"));
-    }
-
-    Ok(())
-}
-
-pub fn get_tasks() -> anyhow::Result<()> {
-    let cfg: Config = Config::load()?;
-    let url = format!("{}/api/courses/{}/tasks", cfg.host, cfg.course);
-
-    let client = reqwest::blocking::Client::new();
-
-    let res = client
-        .get(url)
-        // .header(
-        //     AUTHORIZATION,
-        //     format!("Bearer: {}", cfg.token.clone().unwrap()),
-        // )
-        .header(COOKIE, format!("token={}", cfg.token.unwrap()))
-        .send()?;
-
-    if res.status().is_success() {
-        dbg!(&res.status());
-    } else {
         return Err(anyhow::anyhow!("Response indicates failure"));
     }
 

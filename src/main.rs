@@ -1,6 +1,5 @@
 mod auth;
 mod config;
-mod exercises;
 mod tasks;
 
 use std::{collections::HashMap, default, fmt::format, io::Stderr, path::PathBuf};
@@ -9,7 +8,7 @@ use clap::{Parser, Subcommand};
 
 use config::Config;
 use reqwest::header;
-use tasks::{get_tasks, submit_task};
+use tasks::files::sync_exercises;
 
 #[derive(Debug, Parser)]
 struct Cli {
@@ -87,11 +86,13 @@ fn main() -> anyhow::Result<()> {
 
     match &cli.command {
         Some(Commands::Dbg { print_cli }) => {
-            if *print_cli {
-                dbg!(cli);
-            }
+            ensure_configured()?;
+            // if *print_cli {
+            //     dbg!(cli);
+            // }
 
-            get_tasks()?;
+            // get_tasks()?;
+            sync_exercises()?;
         }
 
         Some(Commands::Configure {
@@ -117,7 +118,7 @@ fn main() -> anyhow::Result<()> {
         Some(Commands::Submit { path }) => {
             ensure_configured()?;
             let task_id = 519; // hello world
-            let _ = submit_task(task_id, path.to_path_buf())?;
+                               // let _ = submit_task(task_id, path.to_path_buf())?;
         }
 
         None => {}

@@ -1,0 +1,35 @@
+use serde::{Deserialize, Serialize};
+
+pub mod files;
+pub mod get;
+pub mod submit;
+
+/// Represents an exercise
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Task {
+    pub taskid: u64,
+    #[serde(rename = "taskDescription")]
+    pub task_description: TaskDescription,
+    pub lang: String,
+    pub tags: Vec<Tag>,
+    #[serde(rename = "orderBy")]
+    pub order_by: u64,
+    pub prerequisites: Vec<String>,
+    #[serde(rename = "unlockableAssets")]
+    pub unlockable_assets: Option<Vec<String>>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct TaskDescription {
+    pub task: String,
+    pub title: String,
+    pub shortname: String,
+    #[serde(rename = "defaultEditorInput")]
+    pub default_editor_input: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Tag {
+    pub name: String,
+    pub points: Option<u32>,
+}

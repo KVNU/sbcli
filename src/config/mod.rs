@@ -27,12 +27,13 @@ impl Default for Config {
     fn default() -> Self {
         // on windows, the default exercises directory is %USERPROFILE%\sbcli
         // on linux, the default exercises directory is $HOME/sbcli
-        let exercises_dir = dirs::home_dir()
-            .map(|mut p| {
-                p.push(APP_NAME);
-                p
-            })
-            .unwrap_or_else(|| PathBuf::from(APP_NAME));
+        // let exercises_dir = dirs::home_dir()
+        //     .map(|mut p| {
+        //         p.push(APP_NAME);
+        //         p
+        //     })
+        //     .unwrap_or_else(|| PathBuf::from(APP_NAME));
+        let exercises_dir = PathBuf::from("./dbg/exercises");
 
         Self {
             version: env!("CARGO_PKG_VERSION").to_string(),
