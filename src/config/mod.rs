@@ -31,4 +31,10 @@ impl Config {
     pub fn store(cfg: &Self) -> Result<(), confy::ConfyError> {
         confy::store(APP_NAME, CONFIG_NAME, cfg)
     }
+
+    pub fn show() -> Result<(), confy::ConfyError> {
+        let cfg = Self::load()?;
+        println!("{:#?}", cfg);
+        Ok(())
+    }
 }
