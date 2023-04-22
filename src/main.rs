@@ -8,7 +8,7 @@ use clap::{Parser, Subcommand};
 
 use config::Config;
 use reqwest::header;
-use tasks::files::sync_exercises;
+use tasks::{files::sync_exercises, submit::submit_task};
 
 #[derive(Debug, Parser)]
 struct Cli {
@@ -40,6 +40,10 @@ enum Commands {
     Download {
         #[arg(short, long)]
         url: String,
+    },
+    Sync {
+        #[arg(short, long)]
+        force: bool,
     },
     /// Submit an exercise to SmartBeans
     Submit { path: PathBuf },
@@ -85,7 +89,7 @@ fn main() -> anyhow::Result<()> {
     // Config::show()?;
 
     match &cli.command {
-        Some(Commands::Dbg { print_cli }) => {
+        Some(Commands::Dbg { print_cli: _ }) => {
             ensure_configured()?;
             // if *print_cli {
             //     dbg!(cli);
@@ -108,6 +112,16 @@ fn main() -> anyhow::Result<()> {
             cfg.host = host.to_string();
 
             Config::store(&cfg)?;
+
+            // ask if we should run sync
+            let mut input = String::new();
+            println!("Do you want to sync the exercises now? [Y/n]");
+            std::io::stdin().read_line(&mut input)?;
+
+            if input.trim().to_lowercase() != "n" {
+                sync_exercises()?;
+                print!("Synced exercises successfully.\nYou can find them in the exercises directory at {}\n", cfg.exercises_dir.display());
+            }
         }
 
         Some(Commands::Login) => {
@@ -115,13 +129,15 @@ fn main() -> anyhow::Result<()> {
             let _ = auth::login();
         }
 
-        Some(Commands::Submit { path }) => {
+        Some(Commands::Sync { force }) => {
             ensure_configured()?;
-            let task_id = 519; // hello world
-                               // let _ = submit_task(task_id, path.to_path_buf())?;
+            sync_exercises()?;
         }
 
-        None => {}
+        Some(Commands::Submit { path }) => {
+            ensure_configured()?;
+            submit_task(path.to_path_buf())?;
+        }
 
         _ => {}
     };
