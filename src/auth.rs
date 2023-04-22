@@ -1,6 +1,13 @@
 use std::collections::HashMap;
 
+use serde::Deserialize;
+
 use crate::config;
+
+#[derive(Deserialize)]
+struct LoginResponse {
+    token: String
+}
 
 /// POST /api/auth/login
 /// 200 OK Headers:
@@ -28,28 +35,11 @@ pub fn login() -> anyhow::Result<()> {
         println!("login successful");
         let headers = res.headers();
 
-        // parse the token from the set-cookie header
-        let token = headers
-            .get("set-cookie")
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .split(';')
-            .next()
-            .unwrap()
-            .split('=')
-            .last()
-            .unwrap();
-        // dbg!(token);
+        let body: LoginResponse = res.json()?;
 
         // save session token
-        cfg.token = Some(token.to_string());
+        cfg.token = Some(body.token);
         config::Config::store(&cfg)?;
-
-        // println!(
-        //     "stored token in config at {}\n",
-        //     confy::get_configuration_file_path("sbcli", "config")?.display()
-        // );
     } else {
         println!("login response indicates failure: {:?}", res);
         return Err(anyhow::anyhow!("login failed"));
