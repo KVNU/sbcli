@@ -2,12 +2,11 @@ mod auth;
 mod config;
 mod tasks;
 
-use std::{collections::HashMap, default, fmt::format, io::Stderr, path::PathBuf};
+use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 
 use config::Config;
-use reqwest::header;
 use tasks::{files::sync_exercises, submit::submit_task};
 
 #[derive(Debug, Parser)]

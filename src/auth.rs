@@ -6,7 +6,7 @@ use crate::config;
 
 #[derive(Deserialize)]
 struct LoginResponse {
-    token: String
+    token: String,
 }
 
 /// POST /api/auth/login
@@ -33,7 +33,6 @@ pub fn login() -> anyhow::Result<()> {
     // check status
     if res.status().is_success() {
         println!("login successful");
-        let headers = res.headers();
 
         let body: LoginResponse = res.json()?;
 

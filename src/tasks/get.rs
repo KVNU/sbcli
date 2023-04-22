@@ -2,7 +2,7 @@ use reqwest::header::COOKIE;
 
 use crate::config::Config;
 
-use super::Task;
+use super::{Submission, Task};
 
 pub fn get_tasks() -> anyhow::Result<Vec<Task>> {
     let cfg = Config::load()?;
@@ -17,7 +17,7 @@ pub fn get_tasks() -> anyhow::Result<Vec<Task>> {
     Ok(tasks)
 }
 
-pub fn get_submissions(task_id: usize) -> {
+pub fn get_submissions(task_id: usize) -> anyhow::Result<Vec<Submission>> {
     let cfg = Config::load()?;
     let url = format!(
         "{}/api/courses/{}/tasks/{}/submissions",

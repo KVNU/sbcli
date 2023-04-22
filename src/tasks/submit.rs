@@ -1,40 +1,15 @@
-use std::{collections::HashMap, fs, path::PathBuf};
+use std::{collections::HashMap, path::PathBuf};
 
 use reqwest::header::COOKIE;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::config::Config;
 
-use super::files::read_task_and_id;
-
-#[derive(Debug, Deserialize)]
-struct SubmissionResult {
-    user: String,
-    course: String,
-    taskid: usize,
-    timestamp: usize,
-    content: String, // figure out how to deserialize this
-    #[serde(rename = "resultType")]
-    result_type: String,
-    simplified: Simplified,
-    details: HashMap<String, String>,
-    score: usize,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-struct Simplified {
-    compiler: Compiler,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-struct Compiler {
-    stdout: String,
-    exitCode: i32,
-}
+use super::{files::read_task_and_id, Submission};
 
 #[derive(Debug, Deserialize)]
 struct SubmissionResponse {
-    result: SubmissionResult,
+    result: Submission,
     #[serde(skip)]
     #[serde(rename = "newUnlockedAssets")]
     new_unlocked_assets: Vec<String>, // don't know the structure of this object, if it's not just a list of strings

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 
 pub mod files;
@@ -32,4 +34,30 @@ pub struct TaskDescription {
 pub struct Tag {
     pub name: String,
     pub points: Option<u32>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Submission {
+    pub user: String,
+    pub course: String,
+    pub taskid: usize,
+    pub timestamp: usize,
+    pub content: String, // figure out how to deserialize this
+    #[serde(rename = "resultType")]
+    pub result_type: String,
+    pub simplified: Simplified,
+    pub details: HashMap<String, String>,
+    pub score: usize,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Simplified {
+    pub compiler: Compiler,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Compiler {
+    pub stdout: String,
+    #[serde(rename = "exitCode")]
+    pub exit_code: i32,
 }
