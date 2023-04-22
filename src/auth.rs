@@ -10,8 +10,6 @@ struct LoginResponse {
 }
 
 /// POST /api/auth/login
-/// 200 OK Headers:
-/// set-cookie: token=TOKEN; Path=/; HttpOnly; Secure; SameSite=Lax
 pub fn login() -> anyhow::Result<()> {
     let mut cfg = config::Config::load()?;
 
@@ -30,13 +28,11 @@ pub fn login() -> anyhow::Result<()> {
         .json(&data)
         .send()?;
 
-    // check status
     if res.status().is_success() {
         println!("login successful");
 
         let body: LoginResponse = res.json()?;
 
-        // save session token
         cfg.token = Some(body.token);
         config::Config::store(&cfg)?;
     } else {

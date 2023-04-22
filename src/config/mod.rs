@@ -1,3 +1,4 @@
+pub mod meta;
 mod settings;
 
 use std::path::PathBuf;
@@ -6,10 +7,7 @@ use serde::{Deserialize, Serialize};
 
 const APP_NAME: &str = "sbcli";
 const CONFIG_NAME: &str = "config";
-
-// pub fn load<T: Deserialize<'static> + Serialize + Default + for<'de> serde::Deserialize<'de>>() -> Result<T, confy::ConfyError> {
-//     confy::load::<T>(APP_NAME, CONFIG_NAME)
-// }
+const META_FILE_NAME: &str = ".meta.json";
 
 /// Application configuration.
 #[derive(Debug, Serialize, Deserialize)]
@@ -20,6 +18,7 @@ pub struct Config {
     pub course: String,
     pub token: Option<String>,
     pub exercises_dir: std::path::PathBuf,
+    pub meta_path: std::path::PathBuf,
     // pub settings: settings::Settings,
 }
 
@@ -34,6 +33,7 @@ impl Default for Config {
         //     })
         //     .unwrap_or_else(|| PathBuf::from(APP_NAME));
         let exercises_dir = PathBuf::from("./dbg/exercises");
+        let progress_path = exercises_dir.join(META_FILE_NAME);
 
         Self {
             version: env!("CARGO_PKG_VERSION").to_string(),
@@ -42,7 +42,7 @@ impl Default for Config {
             course: "".to_string(),
             token: None,
             exercises_dir,
-            // settings: settings::Settings::default(),
+            meta_path: progress_path, // settings: settings::Settings::default(),
         }
     }
 }

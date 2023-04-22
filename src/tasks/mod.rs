@@ -7,21 +7,21 @@ pub mod get;
 pub mod submit;
 
 /// Represents an exercise
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 pub struct Task {
-    pub taskid: u64,
+    pub taskid: usize,
     #[serde(rename = "taskDescription")]
     pub task_description: TaskDescription,
     pub lang: String,
     pub tags: Vec<Tag>,
     #[serde(rename = "orderBy")]
-    pub order_by: u64,
+    pub order_by: usize,
     pub prerequisites: Vec<String>,
     #[serde(rename = "unlockableAssets")]
     pub unlockable_assets: Option<Vec<String>>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 pub struct TaskDescription {
     pub task: String,
     pub title: String,
@@ -30,10 +30,10 @@ pub struct TaskDescription {
     pub default_editor_input: String,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 pub struct Tag {
     pub name: String,
-    pub points: Option<u32>,
+    pub points: Option<usize>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -59,5 +59,5 @@ pub struct Simplified {
 pub struct Compiler {
     pub stdout: String,
     #[serde(rename = "exitCode")]
-    pub exit_code: i32,
+    pub exit_code: isize,
 }

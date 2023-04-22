@@ -9,6 +9,8 @@ use clap::{Parser, Subcommand};
 use config::Config;
 use tasks::{files::sync_exercises, submit::submit_task};
 
+use crate::auth::login;
+
 #[derive(Debug, Parser)]
 struct Cli {
     /// Use a custom config
@@ -25,6 +27,7 @@ enum Commands {
         #[arg(short, long)]
         print_cli: bool,
     },
+    /// Configure the CLI
     Configure {
         #[arg(short, long)]
         username: String,
@@ -40,10 +43,13 @@ enum Commands {
         #[arg(short, long)]
         url: String,
     },
+    /// Get the tasks for the current course and save them locally
     Sync {
         #[arg(short, long)]
         force: bool,
     },
+    /// Get the next task in order
+    Next,
     /// Submit an exercise to SmartBeans
     Submit { path: PathBuf },
     /// Run the tests for a local exercise
@@ -118,6 +124,7 @@ fn main() -> anyhow::Result<()> {
             std::io::stdin().read_line(&mut input)?;
 
             if input.trim().to_lowercase() != "n" {
+                login()?;
                 sync_exercises()?;
                 print!("Synced exercises successfully.\nYou can find them in the exercises directory at {}\n", cfg.exercises_dir.display());
             }
@@ -131,6 +138,27 @@ fn main() -> anyhow::Result<()> {
         Some(Commands::Sync { force }) => {
             ensure_configured()?;
             sync_exercises()?;
+        }
+
+        Some(Commands::Next) => {
+            ensure_configured()?;
+
+            let meta = config::meta::Meta::load()?;
+            let next_task_id = meta.next_task_id;
+            let next_task = meta.tasks.iter().find(|t| t.taskid == next_task_id);
+
+            if let Some(task) = next_task {
+                println!(
+                    "Next task({}): {}",
+                    task.taskid, task.task_description.title
+                );
+                // ask whether to open in editor
+                // let mut input = String::new();
+                // println!("Do you want to open the task in your editor? [Y/n]");
+                // std::io::stdin().read_line(&mut input)?;
+            } else {
+                println!("Couldn't determine next task.");
+            }
         }
 
         Some(Commands::Submit { path }) => {
