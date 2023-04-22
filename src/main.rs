@@ -1,8 +1,9 @@
 mod auth;
 mod config;
+mod exercises;
 mod tasks;
 
-use std::{collections::HashMap, default, fmt::format, path::PathBuf};
+use std::{collections::HashMap, default, fmt::format, io::Stderr, path::PathBuf};
 
 use clap::{Parser, Subcommand};
 
@@ -47,32 +48,29 @@ enum Commands {
     Test { path: PathBuf },
 }
 
-fn check_if_configured() -> anyhow::Result<()> {
+fn ensure_configured() -> anyhow::Result<()> {
     let cfg = Config::load()?;
 
     if cfg.user.is_empty() || cfg.course.is_empty() || cfg.host.is_empty() {
-        anyhow::bail!("Please configure the CLI first");
+        let binary_name = std::env::args().next().unwrap();
+
+        let output = std::process::Command::new(binary_name)
+            .arg("configure")
+            .arg("--help")
+            .output()
+            .expect("failed to execute process");
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+
+        if output.status.success() {
+            println!("{}", stdout);
+        } else {
+            eprintln!("{}", stderr);
+        }
+
+        anyhow::bail!("Please configure the CLI first.");
     }
-
-    Ok(())
-}
-
-/// send a request to the SmartBeans API with the authorization header
-/// `Authorization: Bearer <session token>`
-fn send_with_authorization_header() -> anyhow::Result<()> {
-    let cfg = Config::load().unwrap();
-
-    let client = reqwest::blocking::Client::new();
-
-    let res = client
-        .get(&cfg.host)
-        .header(
-            header::AUTHORIZATION,
-            format!("Bearer {}", cfg.token.unwrap()),
-        )
-        .send()?;
-
-    dbg!(res);
 
     Ok(())
 }
@@ -85,7 +83,7 @@ fn main() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    Config::show()?;
+    // Config::show()?;
 
     match &cli.command {
         Some(Commands::Dbg { print_cli }) => {
@@ -112,13 +110,14 @@ fn main() -> anyhow::Result<()> {
         }
 
         Some(Commands::Login) => {
-            check_if_configured()?;
+            ensure_configured()?;
             let _ = auth::login();
         }
 
         Some(Commands::Submit { path }) => {
+            ensure_configured()?;
             let task_id = 519; // hello world
-            let _ = submit_task(2800, path.to_path_buf())?;
+            let _ = submit_task(task_id, path.to_path_buf())?;
         }
 
         None => {}

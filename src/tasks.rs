@@ -5,6 +5,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::config::Config;
 
+/// Reads the metadata of an exercise located at `path`
+/// The metadata is stored in a .meta file in the same directory as the exercise,
+/// or in a comment at the top of the exercise file "task: <task_id>"
+fn read_exercise_with_metadata(path: PathBuf) -> anyhow::Result<()> {
+    todo!()
+}
+
 #[derive(Debug, Deserialize)]
 struct SubmissionResult {
     user: String,
@@ -62,10 +69,14 @@ pub fn submit_task(task_id: isize, path: PathBuf) -> anyhow::Result<()> {
         .send()?;
 
     if res.status().is_success() {
-        // dbg!(&res.text()?);
-
         let res: SubmissionResponse = res.json()?;
         dbg!(&res);
+
+        if res.result.score >= 1 {
+            println!("Task solved successfully!");
+        } else {
+            println!("Task not solved successfully.");
+        }
     } else {
         dbg!(res);
         return Err(anyhow::anyhow!("Response indicates failure"));
@@ -91,8 +102,6 @@ pub fn get_tasks() -> anyhow::Result<()> {
 
     if res.status().is_success() {
         dbg!(&res.status());
-        let body: String = res.text()?;
-        dbg!(&body);
     } else {
         return Err(anyhow::anyhow!("Response indicates failure"));
     }
