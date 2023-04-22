@@ -1,6 +1,7 @@
+mod auth;
 mod config;
 
-use std::path::PathBuf;
+use std::{collections::HashMap, default, path::PathBuf};
 
 use clap::{Parser, Subcommand};
 
@@ -8,6 +9,7 @@ use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
 };
+use config::Config;
 
 #[derive(Debug, Parser)]
 struct Cli {
@@ -25,12 +27,16 @@ enum Commands {
         #[arg(short, long)]
         print_cli: bool,
     },
-    /// TODO: 1. token login 2. select course from list of options
-    Login {
+    Configure {
+        #[arg(short, long)]
         username: String,
-        // password: String,
-        // course: String,
+        #[arg(short, long)]
+        course: String,
+        #[arg(long)]
+        host: String,
     },
+    /// TODO: 1. token login 2. select course from list of options
+    Login,
     /// Download an exercise and save it in the exercise directory
     Download {
         #[arg(short, long)]
@@ -42,42 +48,23 @@ enum Commands {
     Test { path: PathBuf },
 }
 
-/// Hash password using Argon2
-fn hash_password(password: &str) -> anyhow::Result<String> {
-    let salt = SaltString::generate(&mut OsRng);
+fn check_if_configured() -> anyhow::Result<()> {
+    let cfg = Config::load()?;
 
-    // Argon2 with default params (Argon2id v19)
-    let argon2 = Argon2::default();
-
-    // Hash password to PHC string ($argon2id$v=19$...)
-    let password_hash = argon2
-        .hash_password(password.as_bytes(), &salt)?
-        .to_string();
-
-    // Verify password against PHC string.
-    //
-    // NOTE: hash params from `parsed_hash` are used instead of what is configured in the
-    // `Argon2` instance.
-    // let parsed_hash = PasswordHash::new(&password_hash).unwrap();
-    // assert!(Argon2::default()
-    //     .verify_password(password.as_bytes(), &parsed_hash)
-    //     .is_ok());
-
-    Ok(password_hash)
-}
-
-/// TODO store the password securely.
-/// TODO LTI/OAuth2 login
-fn login(username: &str) -> anyhow::Result<()> {
-    let password = rpassword::prompt_password("Password: ")?;
-    println!("your password: {}", password);
-    println!("hashed: {}", hash_password(&password)?);
+    if cfg.user.is_empty() || cfg.course.is_empty() || cfg.host.is_empty() {
+        anyhow::bail!("Please configure the CLI first");
+    }
 
     Ok(())
 }
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
+
+    if cli.config.is_some() {
+        Config::store(&Config::default())?;
+        return Ok(());
+    }
 
     match &cli.command {
         Some(Commands::Dbg { print_cli }) => {
@@ -86,14 +73,32 @@ fn main() {
             }
         }
 
-        Some(Commands::Login { username }) => {
-            let _ = login(username);
+        Some(Commands::Configure {
+            username,
+            course,
+            host,
+        }) => {
+            let mut cfg = Config::load()?;
+
+            cfg.version = env!("CARGO_PKG_VERSION").to_string();
+            cfg.course = course.to_string();
+            cfg.user = username.to_string();
+            cfg.host = host.to_string();
+
+            Config::store(&cfg)?;
+        }
+
+        Some(Commands::Login) => {
+            check_if_configured()?;
+            let _ = auth::login();
         }
 
         None => {}
 
         _ => {}
-    }
+    };
+
+    Ok(())
 
     // random token with ASCII characters
     // let token = rand::thread_rng()
