@@ -1,5 +1,6 @@
 mod auth;
 mod config;
+mod tasks;
 
 use std::{collections::HashMap, default, fmt::format, path::PathBuf};
 
@@ -11,6 +12,7 @@ use argon2::{
 };
 use config::Config;
 use reqwest::header;
+use tasks::submit_task;
 
 #[derive(Debug, Parser)]
 struct Cli {
@@ -112,6 +114,10 @@ fn main() -> anyhow::Result<()> {
         Some(Commands::Login) => {
             check_if_configured()?;
             let _ = auth::login();
+        }
+
+        Some(Commands::Submit { path }) => {
+            let _ = submit_task(1, path.to_path_buf())?;
         }
 
         None => {}
