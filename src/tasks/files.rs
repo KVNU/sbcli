@@ -49,16 +49,16 @@ pub fn update_meta_progress() -> anyhow::Result<()> {
 
 /// Generates a path to a task directory
 /// The format is: <task_order>_<task_shortname>
-pub fn make_task_path(task: &Task) -> anyhow::Result<PathBuf> {
+/// Returns a tuple of the directory path (`workspace`) and the task file path
+pub fn make_task_path(task: &Task) -> anyhow::Result<(PathBuf, PathBuf)> {
     let meta = Meta::load()?;
-    let dir_path =
-        format!("{:04}_{}", task.order_by, task.task_description.shortname).to_case(Case::Snake);
+    let dir_path = Path::new(&meta.directory_dir()).join(
+        format!("{:04}_{}", task.order_by, task.task_description.shortname).to_case(Case::Snake),
+    );
 
-    let path = Path::new(&meta.directory_dir())
-        .join(dir_path)
-        .join(format!("{}.{}", task.taskid, task.lang));
+    let task_path = dir_path.join(format!("{}.{}", task.taskid, task.lang));
 
-    Ok(path)
+    Ok((dir_path, task_path))
 }
 
 /// Replicates the directory structure of the exercises on the server
@@ -84,18 +84,16 @@ pub fn sync_exercises(force: bool, submissions: bool) -> anyhow::Result<()> {
 }
 
 fn create_task_directories(task: &Task) -> anyhow::Result<()> {
-    let path = make_task_path(task)?;
-    let parent_dir = path.parent().unwrap();
-    if !parent_dir.exists() {
-        fs::create_dir_all(parent_dir)?;
+    let (dir_path, task_path) = make_task_path(task)?;
+    if !dir_path.exists() {
+        fs::create_dir_all(dir_path)?;
     }
     Ok(())
 }
 
 fn create_submissions_directory(task: &Task) -> anyhow::Result<()> {
-    let path = make_task_path(task)?;
-    let parent_dir = path.parent().unwrap();
-    let submissions_dir = parent_dir.join("submissions");
+    let (dir_path, task_path) = make_task_path(task)?;
+    let submissions_dir = dir_path.join("submissions");
     if !submissions_dir.exists() {
         fs::create_dir(submissions_dir)?;
     }
@@ -104,9 +102,8 @@ fn create_submissions_directory(task: &Task) -> anyhow::Result<()> {
 
 fn save_submissions(task: &Task) -> anyhow::Result<()> {
     let submissions = get_submissions(task.taskid)?;
-    let path = make_task_path(task)?;
-    let parent_dir = path.parent().unwrap();
-    let submissions_dir = parent_dir.join("submissions");
+    let (dir_path, task_path) = make_task_path(task)?;
+    let submissions_dir = dir_path.join("submissions");
 
     for submission in submissions {
         let path = submissions_dir.join(format!("{}.{}", submission.timestamp, task.lang));
@@ -126,9 +123,8 @@ fn save_submissions(task: &Task) -> anyhow::Result<()> {
 }
 
 fn write_task_files(task: &Task, force: bool) -> anyhow::Result<()> {
-    let task_path = make_task_path(task)?;
-    let parent_dir = task_path.parent().unwrap();
-    let readme_file_path = parent_dir.join("README.md");
+    let (dir_path, task_path) = make_task_path(task)?;
+    let readme_file_path = dir_path.join("README.md");
 
     if force || !task_path.exists() {
         let content = if task.task_description.default_editor_input.is_empty() {

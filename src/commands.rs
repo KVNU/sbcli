@@ -8,7 +8,7 @@ use colored::Colorize;
 use itertools::Itertools;
 
 use crate::{
-    auth,
+    auth::{self, ensure_auth},
     config::{self, Config},
     tasks::{self, files::sync_exercises},
 };
@@ -44,7 +44,7 @@ pub fn login() -> anyhow::Result<()> {
 }
 
 pub fn sync(force: bool, submissions: bool) -> anyhow::Result<()> {
-    ensure_configured()?;
+    ensure_configured_and_auth()?;
 
     sync_exercises(force, submissions)?;
     let meta = config::meta::Meta::load()?;
@@ -168,9 +168,17 @@ fn ensure_tasks_init() -> anyhow::Result<()> {
     Ok(())
 }
 
+fn ensure_configured_and_auth() -> anyhow::Result<()> {
+    ensure_configured()?;
+    ensure_auth()?;
+
+    Ok(())
+}
+
 fn ensure_fully_setup() -> anyhow::Result<()> {
     ensure_configured()?;
     ensure_tasks_init()?;
+    // ensure_auth()?;
 
     Ok(())
 }

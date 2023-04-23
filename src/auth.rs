@@ -9,12 +9,23 @@ struct LoginResponse {
     token: String,
 }
 
+// TODO: check if session is still valid
+pub fn ensure_auth() -> anyhow::Result<()> {
+    let cfg = config::Config::load()?;
+
+    if cfg.token.is_none() {
+        login()?;
+    }
+
+    Ok(())
+}
+
 /// POST /api/auth/login
 pub fn login() -> anyhow::Result<()> {
     let mut cfg = config::Config::load()?;
 
+    println!("You need to login to continue.");
     let password = rpassword::prompt_password("Password: ")?;
-    // dbg!(&cfg.user, &password);
 
     let client = reqwest::blocking::Client::new();
 
@@ -29,15 +40,15 @@ pub fn login() -> anyhow::Result<()> {
         .send()?;
 
     if res.status().is_success() {
-        println!("login successful");
+        println!("Login successful");
 
         let body: LoginResponse = res.json()?;
 
         cfg.token = Some(body.token);
         config::Config::store(&cfg)?;
     } else {
-        println!("login response indicates failure: {:?}", res);
-        return Err(anyhow::anyhow!("login failed"));
+        println!("Login response indicates failure: {:?}", res);
+        return Err(anyhow::anyhow!("Login failed"));
     }
 
     Ok(())
