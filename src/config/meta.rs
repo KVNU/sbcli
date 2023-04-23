@@ -141,7 +141,7 @@ impl Meta {
         self.task_directory.tasks.as_ref()
     }
 
-    pub fn directory_dir(&self) -> &PathBuf {
+    pub fn directory_dir(&self) -> &Path {
         &self.directory_dir
     }
 

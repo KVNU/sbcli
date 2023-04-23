@@ -1,6 +1,6 @@
 use std::{
     io::{self, Write},
-    path::{Path, PathBuf},
+    path::Path,
 };
 
 use anyhow::Ok;
@@ -11,6 +11,7 @@ use crate::{
     auth::{self, ensure_auth},
     config::{self, Config},
     tasks::{self, files::sync_exercises},
+    util::prompt_for_consent,
 };
 
 pub fn configure(username: &str, course: &str, host: &str) -> anyhow::Result<()> {
@@ -59,7 +60,7 @@ pub fn sync(force: bool, submissions: bool) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn submit_task(path: &PathBuf) -> anyhow::Result<()> {
+pub fn submit_task(path: &Path) -> anyhow::Result<()> {
     ensure_fully_setup()?;
 
     tasks::submit::submit(path)
@@ -67,8 +68,6 @@ pub fn submit_task(path: &PathBuf) -> anyhow::Result<()> {
 
 pub fn list_tasks() -> anyhow::Result<()> {
     ensure_fully_setup()?;
-
-    dbg!("HERE");
 
     let meta = config::meta::Meta::load().unwrap();
     let solved = meta.solved_task_ids();
@@ -178,18 +177,7 @@ fn ensure_configured_and_auth() -> anyhow::Result<()> {
 fn ensure_fully_setup() -> anyhow::Result<()> {
     ensure_configured()?;
     ensure_tasks_init()?;
-    // ensure_auth()?;
+    ensure_auth()?;
 
     Ok(())
-}
-
-// TOOD move to utils
-fn prompt_for_consent(message: &str) -> bool {
-    let mut input = String::new();
-    print!("{} [Y/n]: ", message);
-    io::stdout().flush().unwrap();
-    io::stdin().read_line(&mut input).unwrap();
-
-    let input = input.trim().to_lowercase();
-    input == "y" || input.is_empty()
 }

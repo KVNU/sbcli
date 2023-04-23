@@ -2,6 +2,7 @@ mod auth;
 mod commands;
 mod config;
 mod tasks;
+mod util;
 
 use std::path::PathBuf;
 
