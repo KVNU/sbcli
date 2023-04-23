@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Display};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -97,4 +97,10 @@ pub struct Compiler {
     pub stdout: String,
     #[serde(rename = "exitCode")]
     pub exit_code: isize,
+}
+
+impl Display for Compiler {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.stdout)
+    }
 }

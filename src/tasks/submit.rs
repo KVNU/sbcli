@@ -1,5 +1,6 @@
 use std::{collections::HashMap, path::Path, task};
 
+use colored::Colorize;
 use reqwest::header::COOKIE;
 use serde::Deserialize;
 
@@ -55,12 +56,18 @@ pub fn submit(path: &Path) -> anyhow::Result<()> {
         let res: SubmissionResponsePost = res.json()?;
 
         if res.result.was_successful() {
-            println!("Task solved successfully!");
+            println!("{}", "Task solved successfully!".bright_green());
             let mut meta = config::meta::Meta::load()?;
             meta.add_solved_task_id(task_id);
             meta.save()?;
         } else {
             println!("Task not solved successfully.");
+            println!(
+                "{} | Exit Code: {}\n",
+                res.result.result_type.bright_red(),
+                res.result.simplified.compiler.exit_code
+            );
+            println!("{}\n", res.result.simplified.compiler.stdout);
         }
     } else {
         return Err(anyhow::anyhow!("Response indicates failure"));
