@@ -62,39 +62,16 @@ enum Commands {
     Test { path: PathBuf },
 }
 
-fn prompt_for_char(prompt: &str) -> anyhow::Result<char> {
-    let mut input = String::new();
-    println!("{}", prompt);
-    std::io::stdin().read_line(&mut input)?;
-
-    let input = input.trim().to_lowercase();
-
-    if input.len() != 1 {
-        anyhow::bail!("Please enter a single character.");
-    }
-
-    Ok(input.chars().next().unwrap())
-}
-
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
+    // Using custom config
     if cli.config.is_some() {
         Config::store(&Config::default())?;
         return Ok(());
     }
 
-    // Config::show()?;
-
     match &cli.command {
-        Some(Commands::Dbg { print_cli: _ }) => {
-            // sync()?;
-        }
-
-        Some(Commands::List) => {
-            list_tasks()?;
-        }
-
         Some(Commands::Configure {
             username,
             course,
@@ -103,12 +80,16 @@ fn main() -> anyhow::Result<()> {
             configure(username, course, host)?;
         }
 
-        Some(Commands::Login) => {
-            login()?;
+        Some(Commands::Dbg { print_cli: _ }) => {
+            // sync()?;
         }
 
-        Some(Commands::Sync { force, submissions }) => {
-            sync(*force, *submissions)?;
+        Some(Commands::List) => {
+            list_tasks()?;
+        }
+
+        Some(Commands::Login) => {
+            login()?;
         }
 
         Some(Commands::Start { task_id }) => {
@@ -116,7 +97,11 @@ fn main() -> anyhow::Result<()> {
         }
 
         Some(Commands::Submit { path }) => {
-            submit_task(&path)?;
+            submit_task(path)?;
+        }
+
+        Some(Commands::Sync { force, submissions }) => {
+            sync(*force, *submissions)?;
         }
 
         _ => {}

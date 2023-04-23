@@ -1,13 +1,9 @@
 use std::{
-    collections::HashMap,
     fs,
-    hash::Hash,
     path::{Path, PathBuf},
 };
 
 use convert_case::{Case, Casing};
-use regex::Regex;
-use serde::{Deserialize, Serialize};
 
 use crate::config::{meta::Meta, Config};
 
@@ -18,15 +14,15 @@ use super::{
 
 /// Creates the exercises directory if it doesn't exist
 pub fn init_filesystem() -> anyhow::Result<()> {
-    let cfg = Config::load()?;
-    let meta = Meta::init()?;
+    let _ = Config::load()?;
+    let _ = Meta::init()?;
 
     Ok(())
 }
 
 /// Creates the meta file if it doesn't exist
 /// and initializes it with the number of tasks for the course and the order
-pub fn init_meta(tasks: &Vec<Task>) -> anyhow::Result<()> {
+pub fn init_meta(tasks: &[Task]) -> anyhow::Result<()> {
     // let cfg = Config::load()?;
     let meta = Meta::load()?;
     if meta.total_tasks == 0 {

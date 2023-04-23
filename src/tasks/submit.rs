@@ -31,14 +31,9 @@ pub fn submit(path: &Path) -> anyhow::Result<()> {
     let cfg: Config = Config::load()?;
     let meta = config::meta::Meta::load()?;
 
-    let task_path = meta
-        .get_task_path(45)
-        .expect("Task not found for current path");
-    dbg!(&task_path);
     let task_id = meta
-        .get_task_id(task_path)
+        .get_task_id(path)
         .expect("Task not found for current path");
-    // let task_id = 45;
     let submission_content = std::fs::read_to_string(path)?;
 
     let url = format!(
