@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, hash::Hash};
 
 use serde::{de, Deserialize, Deserializer, Serialize};
 use serde_json::Value;
@@ -39,7 +39,26 @@ pub struct Tag {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
-pub struct Submission {
+pub struct SubmissionPost {
+    pub user: String,
+    pub course: String,
+    pub taskid: usize,
+    pub content: String,
+    #[serde(rename = "resultType")]
+    pub result_type: String,
+    pub simplified: Simplified,
+    pub details: HashMap<String, Value>,
+    pub score: f32,
+}
+
+impl SubmissionPost {
+    pub fn was_successful(&self) -> bool {
+        self.score >= 1.
+    }
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+pub struct SubmissionGet {
     pub id: usize,
     pub course: String,
     pub taskid: usize,
@@ -50,12 +69,12 @@ pub struct Submission {
     simplified: String,
     #[serde(skip)]
     pub details: String,
-    pub score: usize,
+    pub score: f32,
 }
 
-impl Submission {
+impl SubmissionGet {
     pub fn was_successful(&self) -> bool {
-        self.score >= 1
+        self.score >= 1.
     }
 
     pub fn simplified(&self) -> anyhow::Result<Simplified> {

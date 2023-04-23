@@ -19,16 +19,7 @@ use super::{
 /// Creates the exercises directory if it doesn't exist
 pub fn init_filesystem() -> anyhow::Result<()> {
     let cfg = Config::load()?;
-    let path = Path::new(&cfg.exercises_dir);
-    if !path.exists() {
-        fs::create_dir_all(path)?;
-    }
-
-    if !cfg.meta_path.exists() {
-        let meta = Meta::default();
-        let meta_json = serde_json::to_string(&meta)?;
-        fs::write(&cfg.meta_path, meta_json)?;
-    }
+    let meta = Meta::init()?;
 
     Ok(())
 }
@@ -60,21 +51,13 @@ pub fn update_meta() -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Reads the content of an exercise and its metadata
-pub fn read_task_and_id(path: &Path) -> anyhow::Result<(String, usize)> {
-    let content = fs::read_to_string(path)?;
-    let task_id = extract_task_id_from_directory(path)?;
-
-    Ok((content, task_id))
-}
-
 /// Generates a path to a task directory
 /// The format is: <task_order>_<task_shortname>
 pub fn make_task_path(task: &Task) -> anyhow::Result<PathBuf> {
-    let cfg = Config::load()?;
+    let meta = Meta::load()?;
     let dir_path =
         format!("{:04}_{}", task.order_by, task.task_description.shortname).to_case(Case::Snake);
-    let path = Path::new(&cfg.exercises_dir)
+    let path = Path::new(&meta.directory_dir())
         .join(dir_path)
         .join(format!("{}.{}", task.taskid, task.lang));
 
@@ -160,21 +143,4 @@ fn write_task_files(task: &Task, force: bool) -> anyhow::Result<()> {
         fs::write(readme_file_path, &task.task_description.task)?;
     }
     Ok(())
-}
-
-fn extract_task_id_from_directory(path: &Path) -> anyhow::Result<usize> {
-    let directory_name = path
-        .parent()
-        .and_then(|parent| parent.file_name())
-        .and_then(|file_name| file_name.to_str())
-        .ok_or_else(|| anyhow::anyhow!("Failed to extract directory name from path"))?;
-
-    let re = Regex::new(r"^(\d+)_")?;
-    let task_id = re
-        .captures(directory_name)
-        .and_then(|cap| cap.get(1).map(|m| m.as_str()))
-        .ok_or_else(|| anyhow::anyhow!("Failed to extract task ID from directory name"))?;
-
-    let task_id = task_id.parse::<usize>()?;
-    Ok(task_id)
 }

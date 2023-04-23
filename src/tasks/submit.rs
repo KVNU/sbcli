@@ -1,25 +1,45 @@
-use std::{collections::HashMap, path::Path};
+use std::{collections::HashMap, path::Path, task};
 
 use reqwest::header::COOKIE;
 use serde::Deserialize;
 
-use crate::config::{self, Config};
+use crate::{
+    config::{self, Config},
+    tasks::SubmissionPost,
+};
 
-use super::{files::read_task_and_id, Submission};
+use super::SubmissionGet;
 
 #[derive(Debug, Deserialize)]
-struct SubmissionResponse {
-    result: Submission,
+struct SubmissionResponseGet {
+    result: SubmissionGet,
     #[serde(skip)]
     #[serde(rename = "newUnlockedAssets")]
     new_unlocked_assets: Vec<String>, // don't know the structure of this object, if it's not just a list of strings
 }
 
+#[derive(Debug, Deserialize)]
+struct SubmissionResponsePost {
+    result: SubmissionPost,
+    #[serde(skip)]
+    #[serde(rename = "newUnlockedAssets")]
+    new_unlocked_assets: Vec<String>, // don't know the structure of this object, if it's not just a list of strings
+}
+
+/// POST /api/courses/{courseId}/tasks/{taskId}/submissions
 pub fn submit(path: &Path) -> anyhow::Result<()> {
     let cfg: Config = Config::load()?;
+    let meta = config::meta::Meta::load()?;
 
-    // TODO broken. Use Meta.directory
-    let (submission_content, task_id) = read_task_and_id(&path)?;
+    let task_path = meta
+        .get_task_path(45)
+        .expect("Task not found for current path");
+    dbg!(&task_path);
+    let task_id = meta
+        .get_task_id(task_path)
+        .expect("Task not found for current path");
+    // let task_id = 45;
+    let submission_content = std::fs::read_to_string(path)?;
 
     let url = format!(
         "{}/api/courses/{}/tasks/{}/submissions",
@@ -37,10 +57,15 @@ pub fn submit(path: &Path) -> anyhow::Result<()> {
         .send()?;
 
     if res.status().is_success() {
-        let res: SubmissionResponse = res.json()?;
+        dbg!(&res.text().unwrap());
+        // let res: SubmissionResponse = res.json()?;
+        let res: SubmissionResponsePost = SubmissionResponsePost {
+            result: SubmissionPost::default(),
+            new_unlocked_assets: Vec::new(),
+        };
         dbg!(&res);
 
-        if res.result.score >= 1 {
+        if res.result.was_successful() {
             println!("Task solved successfully!");
             let mut meta = config::meta::Meta::load()?;
             meta.add_solved_task_id(task_id);

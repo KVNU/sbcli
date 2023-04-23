@@ -47,15 +47,12 @@ pub fn sync(force: bool, submissions: bool) -> anyhow::Result<()> {
     ensure_configured()?;
 
     sync_exercises(force, submissions)?;
+    let meta = config::meta::Meta::load()?;
 
     let command_str = format!("{} start", env!("CARGO_PKG_NAME")).on_bright_black();
     println!(
         "Synced exercises! You can find them in {} or use `{}` to start working on them in your editor.",
-        Config::load()?
-            .exercises_dir
-            .display()
-            .to_string()
-            .bright_blue(),
+        meta.directory_dir().display().to_string().bright_blue(),
         command_str.on_black(),
     );
 

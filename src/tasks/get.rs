@@ -2,7 +2,7 @@ use reqwest::header::COOKIE;
 
 use crate::config::Config;
 
-use super::{Submission, Task};
+use super::{SubmissionGet, Task};
 
 /// GET /api/courses/{courseId}/tasks
 /// Needs to be authenticated
@@ -22,7 +22,7 @@ pub fn get_tasks() -> anyhow::Result<Vec<Task>> {
 /// GET /api/courses/{courseId}/tasks/{taskId}/submissions
 /// Needs to be authenticated
 /// Returns a list of submissions for the given task
-pub fn get_submissions(task_id: usize) -> anyhow::Result<Vec<Submission>> {
+pub fn get_submissions(task_id: usize) -> anyhow::Result<Vec<SubmissionGet>> {
     let cfg = Config::load()?;
     let url = format!(
         "{}/api/courses/{}/tasks/{}/submissions",
@@ -35,7 +35,7 @@ pub fn get_submissions(task_id: usize) -> anyhow::Result<Vec<Submission>> {
         .header(COOKIE, format!("token={}", cfg.token.unwrap()))
         .send()?;
 
-    let submissions: Vec<Submission> = res.json()?;
+    let submissions: Vec<SubmissionGet> = res.json()?;
     // let submissions: Vec<Submission> = Vec::new();
     Ok(submissions)
 }
