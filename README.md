@@ -31,7 +31,11 @@ A SmartBeans account which has password authentication enabled. Token login is w
 ### Commands
 
 The CLI is organized into subcommands. To see a list of available subcommands, run `sbcli --help`.
-You'll need to configure the CLI before you can use it. Run `sbcli config` with all required arguments to do so.
+You'll need to configure the CLI before you can use it. Run
+```
+sbcli config -u USERNAME -c COURSE --host HOST
+```
+ with all required arguments to do so.
 
 If you're not logged in, it'll ask if you want to do so. Otherwise, run `sbcli login` to log in.
 
@@ -39,7 +43,9 @@ Then you'll want to run `sbcli sync` to download the exercise directory from Sma
 
 Next, you can run `sbcli start` to start a new exercise. By default, this will open the next exercise in order using your default editor.
 
-Once you're done, you can run `sbcli submit` to submit your solution to SmartBeans.
+Once you're done, you can run `sbcli submit PATH_TO_SOLUTION` to submit your solution to SmartBeans.
+
+It's currently **not** possible to submit files which have been **moved or renamed**. This will be fixed in a future release.
 
 Run `sbcli list` to see a list of all exercises in the exercise directory and their current status.
 
@@ -61,5 +67,6 @@ Run `sbcli list` to see a list of all exercises in the exercise directory and th
 ### Optional functionality
 
 - Facilitate a user's ability to interact with other parts of SmartBeans locally on the CLI, e.g. viewing the leaderboard.
+- Gamification features
 
 [^sb_gitlab]: https://gitlab.gwdg.de/smart/smartbeans
