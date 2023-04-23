@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    fs,
     path::{Path, PathBuf},
 };
 
@@ -67,7 +68,17 @@ impl Meta {
             .iter()
             .map(|task| {
                 let path = make_task_path(task).unwrap();
-                (task.taskid, path)
+                // // HACK
+                // let parent = path.parent().unwrap();
+                // if !parent.exists() {
+                //     fs::create_dir_all(parent).expect("Failed to create task directory");
+                // }
+                // // if !path.exists() {}
+                // // ---
+                (
+                    task.taskid,
+                    path.canonicalize().expect("Failed to get canonical path"),
+                )
             })
             .collect::<HashMap<usize, PathBuf>>();
 

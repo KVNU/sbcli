@@ -53,6 +53,7 @@ pub fn make_task_path(task: &Task) -> anyhow::Result<PathBuf> {
     let meta = Meta::load()?;
     let dir_path =
         format!("{:04}_{}", task.order_by, task.task_description.shortname).to_case(Case::Snake);
+
     let path = Path::new(&meta.directory_dir())
         .join(dir_path)
         .join(format!("{}.{}", task.taskid, task.lang));
@@ -66,17 +67,18 @@ pub fn make_task_path(task: &Task) -> anyhow::Result<PathBuf> {
 pub fn sync_exercises(force: bool, submissions: bool) -> anyhow::Result<()> {
     init_filesystem()?;
     let tasks = get_tasks()?;
-    init_meta(&tasks)?;
 
-    for task in tasks {
-        create_task_directories(&task)?;
+    for task in &tasks {
+        create_task_directories(task)?;
         if submissions {
-            create_submissions_directory(&task)?;
-            save_submissions(&task)?;
+            create_submissions_directory(task)?;
+            save_submissions(task)?;
         }
-        write_task_files(&task, force)?;
+        write_task_files(task, force)?;
     }
 
+    // HACK positional stuff. make this more robust
+    init_meta(&tasks)?;
     update_meta()?;
     Ok(())
 }
