@@ -1,9 +1,9 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::{collections::HashMap, path::Path};
 
 use reqwest::header::COOKIE;
 use serde::Deserialize;
 
-use crate::config::Config;
+use crate::config::{self, Config};
 
 use super::{files::read_task_and_id, Submission};
 
@@ -15,7 +15,7 @@ struct SubmissionResponse {
     new_unlocked_assets: Vec<String>, // don't know the structure of this object, if it's not just a list of strings
 }
 
-pub fn submit_task(path: PathBuf) -> anyhow::Result<()> {
+pub fn submit(path: &Path) -> anyhow::Result<()> {
     let cfg: Config = Config::load()?;
 
     let (submission_content, task_id) = read_task_and_id(&path)?;
@@ -41,6 +41,9 @@ pub fn submit_task(path: PathBuf) -> anyhow::Result<()> {
 
         if res.result.score >= 1 {
             println!("Task solved successfully!");
+            let mut meta = config::meta::Meta::load()?;
+            meta.add_solved_task_id(task_id);
+            meta.save()?;
         } else {
             println!("Task not solved successfully.");
         }

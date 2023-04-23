@@ -5,9 +5,10 @@ use serde::{Deserialize, Serialize};
 pub mod files;
 pub mod get;
 pub mod submit;
+pub mod open;
 
 /// Represents an exercise
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Task {
     pub taskid: usize,
     #[serde(rename = "taskDescription")]
@@ -21,7 +22,7 @@ pub struct Task {
     pub unlockable_assets: Option<Vec<String>>,
 }
 
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct TaskDescription {
     pub task: String,
     pub title: String,
@@ -30,13 +31,13 @@ pub struct TaskDescription {
     pub default_editor_input: String,
 }
 
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Tag {
     pub name: String,
     pub points: Option<usize>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Submission {
     pub user: String,
     pub course: String,
@@ -50,12 +51,12 @@ pub struct Submission {
     pub score: usize,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Simplified {
     pub compiler: Compiler,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Compiler {
     pub stdout: String,
     #[serde(rename = "exitCode")]

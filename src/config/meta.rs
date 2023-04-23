@@ -1,8 +1,8 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::tasks::Task;
+use crate::tasks::{files::make_task_path, Task};
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Meta {
@@ -10,21 +10,38 @@ pub struct Meta {
     pub solved_tasks: usize,
     /// ID of the next task to be solved
     pub next_task_id: usize,
-    pub tasks: Vec<Task>,
+    // TODO only use getters and setters for these, since we need to regenerate the Meta struct if these change
+    tasks: Vec<Task>,
     solved_tasks_ids: Vec<usize>,
     /// <task_id, order_by>
     order: HashMap<usize, usize>,
+    /// <task_id, path>
+    directory: HashMap<usize, PathBuf>,
 }
 
 impl Meta {
-    pub fn new(tasks: Vec<Task>) -> Self {
+    pub fn new(tasks: &Vec<Task>) -> Self {
+        let tasks = tasks.clone();
         let order = Self::get_order(&tasks);
+        let directory = tasks
+            .iter()
+            .map(|task| {
+                let path = make_task_path(task).unwrap();
+                (task.taskid, path)
+            })
+            .collect::<HashMap<usize, PathBuf>>();
+
         Self {
             total_tasks: tasks.len(),
             tasks,
             order,
+            directory,
             ..Default::default()
         }
+    }
+
+    pub fn get_task_path(&self, task_id: usize) -> Option<&PathBuf> {
+        self.directory.get(&task_id)
     }
 
     pub fn get_order(tasks: &Vec<Task>) -> HashMap<usize, usize> {
@@ -36,9 +53,18 @@ impl Meta {
         order
     }
 
+    pub fn solved_task_ids(&self) -> &Vec<usize> {
+        &self.solved_tasks_ids
+    }
+
     /// Updates the list of solved tasks and the next task to be solved
     pub fn set_solved_tasks_ids(&mut self, solved_tasks_ids: Vec<usize>) {
         self.solved_tasks_ids = solved_tasks_ids;
+        self.update();
+    }
+
+    pub fn add_solved_task_id(&mut self, task_id: usize) {
+        self.solved_tasks_ids.push(task_id);
         self.update();
     }
 
@@ -85,6 +111,10 @@ impl Meta {
         }
 
         0
+    }
+
+    pub fn tasks(&self) -> &[Task] {
+        self.tasks.as_ref()
     }
 }
 
@@ -133,7 +163,7 @@ mod tests {
             },
         ];
 
-        let mut progress = Meta::new(tasks);
+        let mut progress = Meta::new(&tasks);
 
         assert_eq!(progress.total_tasks, 7);
         assert!(progress.solved_tasks_ids.is_empty());

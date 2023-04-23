@@ -1,4 +1,5 @@
 mod auth;
+mod commands;
 mod config;
 mod tasks;
 
@@ -6,10 +7,11 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 
+use commands::{list_tasks, start_task, submit_task, sync};
 use config::Config;
-use tasks::{files::sync_exercises, submit::submit_task};
 
-use crate::auth::login;
+use crate::commands::configure;
+use crate::commands::login;
 
 #[derive(Debug, Parser)]
 struct Cli {
@@ -38,49 +40,37 @@ enum Commands {
     },
     /// TODO: 1. token login 2. select course from list of options
     Login,
-    /// Download an exercise and save it in the exercise directory
-    Download {
-        #[arg(short, long)]
-        url: String,
-    },
     /// Get the tasks for the current course and save them locally
     Sync {
+        /// Force sync even if the exercises directory is not empty
+        /// This will overwrite any local exercises with the latest submission on SmartBeans
         #[arg(short, long)]
         force: bool,
     },
-    /// Get the next task in order
-    Next,
+    /// List all tasks and their current status
+    List,
+    /// Show your progress
+    Progress,
+    /// Work on the next task, or the task with the given ID
+    Start { task_id: Option<usize> },
     /// Submit an exercise to SmartBeans
     Submit { path: PathBuf },
     /// Run the tests for a local exercise
     Test { path: PathBuf },
 }
 
-fn ensure_configured() -> anyhow::Result<()> {
-    let cfg = Config::load()?;
+fn prompt_for_char(prompt: &str) -> anyhow::Result<char> {
+    let mut input = String::new();
+    println!("{}", prompt);
+    std::io::stdin().read_line(&mut input)?;
 
-    if cfg.user.is_empty() || cfg.course.is_empty() || cfg.host.is_empty() {
-        let binary_name = std::env::args().next().unwrap();
+    let input = input.trim().to_lowercase();
 
-        let output = std::process::Command::new(binary_name)
-            .arg("configure")
-            .arg("--help")
-            .output()
-            .expect("failed to execute process");
-
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        let stderr = String::from_utf8_lossy(&output.stderr);
-
-        if output.status.success() {
-            println!("{}", stdout);
-        } else {
-            eprintln!("{}", stderr);
-        }
-
-        anyhow::bail!("Please configure the CLI first.");
+    if input.len() != 1 {
+        anyhow::bail!("Please enter a single character.");
     }
 
-    Ok(())
+    Ok(input.chars().next().unwrap())
 }
 
 fn main() -> anyhow::Result<()> {
@@ -95,13 +85,11 @@ fn main() -> anyhow::Result<()> {
 
     match &cli.command {
         Some(Commands::Dbg { print_cli: _ }) => {
-            ensure_configured()?;
-            // if *print_cli {
-            //     dbg!(cli);
-            // }
+            sync()?;
+        }
 
-            // get_tasks()?;
-            sync_exercises()?;
+        Some(Commands::List) => {
+            list_tasks()?;
         }
 
         Some(Commands::Configure {
@@ -109,71 +97,27 @@ fn main() -> anyhow::Result<()> {
             course,
             host,
         }) => {
-            let mut cfg = Config::load()?;
-
-            cfg.version = env!("CARGO_PKG_VERSION").to_string();
-            cfg.course = course.to_string();
-            cfg.user = username.to_string();
-            cfg.host = host.to_string();
-
-            Config::store(&cfg)?;
-
-            // ask if we should run sync
-            let mut input = String::new();
-            println!("Do you want to sync the exercises now? [Y/n]");
-            std::io::stdin().read_line(&mut input)?;
-
-            if input.trim().to_lowercase() != "n" {
-                login()?;
-                sync_exercises()?;
-                print!("Synced exercises successfully.\nYou can find them in the exercises directory at {}\n", cfg.exercises_dir.display());
-            }
+            configure(username, course, host)?;
         }
 
         Some(Commands::Login) => {
-            ensure_configured()?;
-            let _ = auth::login();
+            login()?;
         }
 
         Some(Commands::Sync { force }) => {
-            ensure_configured()?;
-            sync_exercises()?;
+            sync()?;
         }
 
-        Some(Commands::Next) => {
-            ensure_configured()?;
-
-            let meta = config::meta::Meta::load()?;
-            let next_task_id = meta.next_task_id;
-            let next_task = meta.tasks.iter().find(|t| t.taskid == next_task_id);
-
-            if let Some(task) = next_task {
-                println!(
-                    "Next task({}): {}",
-                    task.taskid, task.task_description.title
-                );
-                // ask whether to open in editor
-                // let mut input = String::new();
-                // println!("Do you want to open the task in your editor? [Y/n]");
-                // std::io::stdin().read_line(&mut input)?;
-            } else {
-                println!("Couldn't determine next task.");
-            }
+        Some(Commands::Start { task_id }) => {
+            start_task(*task_id)?;
         }
 
         Some(Commands::Submit { path }) => {
-            ensure_configured()?;
-            submit_task(path.to_path_buf())?;
+            submit_task(&path)?;
         }
 
         _ => {}
     };
 
     Ok(())
-
-    // random token with ASCII characters
-    // let token = rand::thread_rng()
-    //     .sample_iter(&rand::distributions::Alphanumeric)
-    //     .take(30)
-    //     .collect::<String>();
 }

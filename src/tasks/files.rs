@@ -1,4 +1,9 @@
-use std::{collections::HashMap, fs, hash::Hash, path::Path};
+use std::{
+    collections::HashMap,
+    fs,
+    hash::Hash,
+    path::{Path, PathBuf},
+};
 
 use convert_case::{Case, Casing};
 use regex::Regex;
@@ -20,23 +25,22 @@ pub fn init_filesystem() -> anyhow::Result<()> {
     }
 
     if !cfg.meta_path.exists() {
-        let progress = Meta::new(Vec::new());
-        let progress_json = serde_json::to_string(&progress)?;
-        fs::write(&cfg.meta_path, progress_json)?;
+        let meta = Meta::default();
+        let meta_json = serde_json::to_string(&meta)?;
+        fs::write(&cfg.meta_path, meta_json)?;
     }
 
     Ok(())
 }
 
-/// Creates the progress file if it doesn't exist
+/// Creates the meta file if it doesn't exist
 /// and initializes it with the number of tasks for the course and the order
-pub fn init_progress() -> anyhow::Result<()> {
+pub fn init_meta(tasks: &Vec<Task>) -> anyhow::Result<()> {
     // let cfg = Config::load()?;
-    let progress = Meta::load()?;
-    if progress.total_tasks == 0 {
-        let tasks = get_tasks()?;
-        let progress = Meta::new(tasks);
-        progress.save()?;
+    let meta = Meta::load()?;
+    if meta.total_tasks == 0 {
+        let meta = Meta::new(tasks);
+        meta.save()?;
     }
 
     Ok(())
@@ -45,7 +49,7 @@ pub fn init_progress() -> anyhow::Result<()> {
 /// Manages tracking of progress
 /// - Updates the progress files list of solved tasks
 /// - Updates the next task to be solved according to the orderings of the tasks
-pub fn update_progress_file() -> anyhow::Result<()> {
+pub fn update_meta() -> anyhow::Result<()> {
     let solved = get_progress()?;
 
     let mut progress = Meta::load()?;
@@ -64,39 +68,71 @@ pub fn read_task_and_id(path: &Path) -> anyhow::Result<(String, usize)> {
     Ok((content, task_id))
 }
 
+/// Generates a path to a task directory
+/// The format is: <task_order>_<task_shortname>
+pub fn make_task_path(task: &Task) -> anyhow::Result<PathBuf> {
+    let cfg = Config::load()?;
+    let dir_path =
+        format!("{:04}_{}", task.order_by, task.task_description.shortname).to_case(Case::Snake);
+    let path = Path::new(&cfg.exercises_dir)
+        .join(dir_path)
+        .join(format!("{}.{}", task.taskid, task.lang));
+
+    Ok(path)
+}
+
+// pub fn make_task_path(task: &Task) -> anyhow::Result<PathBuf> {
+//     let cfg = Config::load()?;
+//     let path = Path::new(&cfg.exercises_dir).join(format!(
+//         "{}_{}",
+//         task.taskid,
+//         task.task_description.shortname.to_case(Case::Snake)
+//     ));
+
+//     if !path.exists() {
+//         // fs::create_dir_all(&path)?;
+//         fs::create_dir(&path)?;
+//     }
+
+//     let file_name = format!("{}.{}", task.taskid, task.lang);
+//     let file_path = path.join(file_name);
+
+//     Ok(file_path)
+// }
+
 /// Replicates the directory structure of the exercises on the server
 /// in the exercises directory
 pub fn sync_exercises() -> anyhow::Result<()> {
-    let cfg = Config::load().expect("Unable to load config");
-
     init_filesystem().expect("Unable to init filesystem"); // TODO maybe this should be done elsewhere
-    init_progress().expect("Unable to init progress");
 
     let tasks = get_tasks().expect("Unable to get tasks");
 
+    init_meta(&tasks).expect("Unable to init progress");
+
     // create directory structure
     for task in tasks {
-        let path = Path::new(&cfg.exercises_dir).join(format!(
-            "{}_{}",
-            task.taskid,
-            &task.task_description.shortname.to_case(Case::Snake)
-        ));
-        if !path.exists() {
-            fs::create_dir(&path)?;
+        let task_path = make_task_path(&task)?;
+        let parent_dir = task_path.parent().unwrap();
+
+        if !parent_dir.exists() {
+            fs::create_dir_all(parent_dir)?;
         }
 
-        let readme_file_path = path.join("README.md");
-        let file_name = format!("{}.{}", task.taskid, task.lang);
-        let file_path = path.join(file_name);
+        let readme_file_path = parent_dir.join("README.md");
 
-        if !file_path.exists() {
-            fs::write(file_path, task.task_description.default_editor_input)?;
+        if !task_path.exists() {
+            let content = if task.task_description.default_editor_input.is_empty() {
+                "// Write your code here, and submit your solution once you're done!\n// Read the README for instructions\n".into()
+            } else {
+                task.task_description.default_editor_input
+            };
+
+            fs::write(task_path, content)?;
             fs::write(readme_file_path, task.task_description.task)?;
-            // fs::write(meta_file_path, task.taskid.to_string())?;
         }
     }
 
-    update_progress_file()?;
+    update_meta()?;
 
     Ok(())
 }
