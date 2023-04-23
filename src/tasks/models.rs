@@ -56,16 +56,17 @@ impl SubmissionPost {
 /// TODO deduplicate this by using optional fields.
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct SubmissionGet {
+    // #[serde(skip)]
     pub id: usize,
     pub course: String,
     pub taskid: usize,
-    pub timestamp: usize,
-    pub content: String, // figure out how to deserialize this
+    #[serde(skip)]
+    pub timestamp: usize, // this is somehow either a string or a number, depending on javascripts whim. Skippping it for now.
+    pub content: String,
     #[serde(rename = "resultType")]
     pub result_type: String,
-    simplified: String,
-    #[serde(skip)]
-    pub details: String,
+    pub simplified: Simplified, // this is a string in the dev api, but an object in the prod api.
+    pub details: HashMap<String, Value>,
     pub score: f32,
 }
 
@@ -74,14 +75,14 @@ impl SubmissionGet {
         self.score >= 1.
     }
 
-    pub fn simplified(&self) -> anyhow::Result<Simplified> {
-        let simplified: Simplified = serde_json::from_str(&self.simplified).unwrap();
-        Ok(simplified)
-    }
+    // pub fn simplified(&self) -> Simplified {
+    //     // let simplified: Simplified = serde_json::from_str(&self.simplified).unwrap();
+    //     // Ok(self.simplified.clone()) // todo unecessary with prod api
+    // }
 
-    pub fn compiler_msg(&self) -> anyhow::Result<Compiler> {
-        Ok(self.simplified()?.compiler)
-    }
+    // pub fn compiler_msg(&self) -> Compiler {
+    //     // Ok(self.simplified()?.compiler)
+    // }
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]

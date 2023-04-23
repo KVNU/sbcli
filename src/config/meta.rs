@@ -150,6 +150,9 @@ impl Meta {
     }
 
     pub fn get_task_id_from_workspace(&self, task_path: &Path) -> Option<usize> {
+        let task_path = task_path
+            .canonicalize()
+            .expect("Failed to get canonical path");
         self.task_directory
             .directory
             .iter()

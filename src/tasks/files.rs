@@ -36,6 +36,7 @@ pub fn init_meta(tasks: &[Task]) -> anyhow::Result<()> {
 /// - Updates the progress files list of solved tasks
 /// - Updates the next task to be solved according to the orderings of the tasks
 /// TODO track progress offline
+/// TODO associate with the Meta struct
 pub fn update_meta_progress() -> anyhow::Result<()> {
     let solved = get_progress()?;
 
@@ -63,23 +64,38 @@ pub fn make_task_path(task: &Task) -> anyhow::Result<(PathBuf, PathBuf)> {
 
 /// Replicates the directory structure of the exercises on the server
 /// in the exercises directory
-/// TODO fix force logic
 pub fn sync_exercises(force: bool, submissions: bool) -> anyhow::Result<()> {
     init_filesystem()?;
     let tasks = get_tasks()?;
 
-    for task in &tasks {
+    let total_tasks = tasks.len();
+    for (index, task) in tasks.iter().enumerate() {
         create_task_directories(task)?;
+        // TODO sync submissions is sloooow. We'd need async, then batch requests etc.
         if submissions {
             create_submissions_directory(task)?;
             save_submissions(task)?;
         }
         write_task_files(task, force)?;
+
+        // Print progress
+        let progress = ((index + 1) as f32 / total_tasks as f32) * 100.0;
+        print!(
+            "\rSyncing tasks: {:.2}% ({}/{})",
+            progress,
+            index + 1,
+            total_tasks
+        );
+        std::io::Write::flush(&mut std::io::stdout())?;
     }
 
     // HACK positional stuff. make this more robust
     init_meta(&tasks)?;
     update_meta_progress()?;
+
+    // Clear
+    print!("\r");
+
     Ok(())
 }
 
@@ -115,7 +131,7 @@ fn save_submissions(task: &Task) -> anyhow::Result<()> {
             fs::write(path, &submission.content)?;
             fs::write(
                 metadata_path,
-                serde_json::to_string_pretty(&submission.compiler_msg()?)?,
+                serde_json::to_string_pretty(&submission.simplified.compiler)?,
             )?;
         }
     }
