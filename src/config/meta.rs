@@ -1,15 +1,14 @@
 use std::{
     collections::HashMap,
-    fs,
     path::{Path, PathBuf},
 };
 
+use confy::ConfyError;
 use serde::{Deserialize, Serialize};
 
 use crate::tasks::{files::make_task_path, Task};
 
-const META_FILE_NAME: &str = ".meta.json";
-const DIRECTORY_DIR_NAME_BASE: &str = "./tasks";
+use super::{APP_NAME, DIRECTORY_DIR_NAME, META_FILE_NAME};
 
 /// Meta is a struct that contains information about the current state of the exercises directory
 /// It is serialized to a file in the exercises directory
@@ -23,7 +22,7 @@ pub struct Meta {
     /// ID of the next task to be solved
     pub next_task_id: usize,
     directory_dir: PathBuf,
-    meta_path: PathBuf,
+    // meta_path: PathBuf,
     // TODO only use getters and setters for these, since we need to regenerate the Meta struct if these change
     tasks: Vec<Task>,
     solved_tasks_ids: Vec<usize>,
@@ -35,23 +34,23 @@ pub struct Meta {
 
 impl Default for Meta {
     fn default() -> Self {
-        // on windows, the default exercises directory is %USERPROFILE%\sbcli
-        // on linux, the default exercises directory is $HOME/sbcli
-        // let exercises_dir = dirs::home_dir()
-        //     .map(|mut p| {
-        //         p.push(APP_NAME);
-        //         p
-        //     })
-        //     .unwrap_or_else(|| PathBuf::from(APP_NAME));
-        let directory_dir = PathBuf::from(DIRECTORY_DIR_NAME_BASE);
-        let meta_path = directory_dir.join(META_FILE_NAME);
+        // on windows, the default exercises directory is %USERPROFILE%\sbcli\<DIR_NAME>
+        // on linux, the default exercises directory is $HOME/sbcli/
+        let directory_dir = dirs::home_dir()
+            .map(|mut p| {
+                p.push(APP_NAME);
+                p.push(DIRECTORY_DIR_NAME);
+                p
+            })
+            .unwrap_or_else(|| PathBuf::from(APP_NAME));
+        // let meta_path = directory_dir.join(META_FILE_NAME);
 
         Self {
             total_tasks: 0,
             solved_tasks: 0,
             next_task_id: 0,
             directory_dir,
-            meta_path,
+            // meta_path,
             tasks: Vec::new(),
             solved_tasks_ids: Vec::new(),
             order: HashMap::new(),
@@ -68,17 +67,7 @@ impl Meta {
             .iter()
             .map(|task| {
                 let path = make_task_path(task).unwrap();
-                // // HACK
-                // let parent = path.parent().unwrap();
-                // if !parent.exists() {
-                //     fs::create_dir_all(parent).expect("Failed to create task directory");
-                // }
-                // // if !path.exists() {}
-                // // ---
-                (
-                    task.taskid,
-                    path.canonicalize().expect("Failed to get canonical path"),
-                )
+                (task.taskid, path)
             })
             .collect::<HashMap<usize, PathBuf>>();
 
@@ -91,12 +80,20 @@ impl Meta {
         }
     }
 
+    pub fn load() -> Result<Self, ConfyError> {
+        confy::load::<Self>(APP_NAME, META_FILE_NAME)
+    }
+
+    pub fn save(&self) -> Result<(), ConfyError> {
+        confy::store(APP_NAME, META_FILE_NAME, self)
+    }
+
     pub fn directory_dir(&self) -> &PathBuf {
         &self.directory_dir
     }
-    pub fn meta_path(&self) -> &PathBuf {
-        &self.meta_path
-    }
+    // pub fn meta_path(&self) -> &PathBuf {
+    //     &self.meta_path
+    // }
 
     pub fn get_task_path(&self, task_id: usize) -> Option<&PathBuf> {
         self.directory.get(&task_id)
@@ -139,29 +136,33 @@ impl Meta {
         self.update();
     }
 
-    /// Initializes the meta file
-    pub fn init() -> anyhow::Result<Self> {
-        let meta = Self::default();
-        if !meta.directory_dir.exists() {
-            std::fs::create_dir_all(&meta.directory_dir)?;
-        }
+    /// Initializes the meta file and directory
+    // pub fn init() -> anyhow::Result<Self> {
+    //     let meta = Self::default();
+    //     if meta.meta_path.exists() {
+    //         return Self::load();
+    //     }
 
-        meta.save()?;
-        Ok(meta)
-    }
+    //     if !meta.directory_dir.exists() {
+    //         std::fs::create_dir_all(&meta.directory_dir)?;
+    //     }
 
-    pub fn load() -> anyhow::Result<Self> {
-        let path = Self::default().meta_path; // TODO this is a bit hacky, but we can't configure the path for now, so whatever
-        let meta_json = std::fs::read_to_string(path)?;
-        let progress: Self = serde_json::from_str(&meta_json)?;
-        Ok(progress)
-    }
+    //     meta.save()?;
+    //     Ok(meta)
+    // }
 
-    pub fn save(&self) -> anyhow::Result<()> {
-        let progress_json = serde_json::to_string(&self)?;
-        std::fs::write(&self.meta_path, progress_json)?;
-        Ok(())
-    }
+    // pub fn load() -> anyhow::Result<Self> {
+    //     let path = Self::default().meta_path;
+    //     let meta_json = std::fs::read_to_string(path)?;
+    //     let progress: Self = serde_json::from_str(&meta_json)?;
+    //     Ok(progress)
+    // }
+
+    // pub fn save(&self) -> anyhow::Result<()> {
+    //     let progress_json = serde_json::to_string(&self)?;
+    //     std::fs::write(&self.meta_path, progress_json)?;
+    //     Ok(())
+    // }
 
     pub fn update(&mut self) {
         self.solved_tasks = self.solved_tasks_ids.len();

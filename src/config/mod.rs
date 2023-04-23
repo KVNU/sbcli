@@ -5,8 +5,10 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
-const APP_NAME: &str = "sbcli";
-const CONFIG_NAME: &str = "config";
+pub const APP_NAME: &str = "sbcli";
+pub const CONFIG_NAME: &str = "config";
+pub const META_FILE_NAME: &str = "meta";
+pub const DIRECTORY_DIR_NAME: &str = "tasks";
 
 /// Application configuration.
 #[derive(Debug, Serialize, Deserialize)]

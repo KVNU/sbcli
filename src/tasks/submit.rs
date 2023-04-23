@@ -33,7 +33,7 @@ pub fn submit(path: &Path) -> anyhow::Result<()> {
 
     let task_id = meta
         .get_task_id(path)
-        .expect("Task not found for current path");
+        .expect("Task not found at expected path");
     let submission_content = std::fs::read_to_string(path)?;
 
     let url = format!(
@@ -52,13 +52,7 @@ pub fn submit(path: &Path) -> anyhow::Result<()> {
         .send()?;
 
     if res.status().is_success() {
-        dbg!(&res.text().unwrap());
-        // let res: SubmissionResponse = res.json()?;
-        let res: SubmissionResponsePost = SubmissionResponsePost {
-            result: SubmissionPost::default(),
-            new_unlocked_assets: Vec::new(),
-        };
-        dbg!(&res);
+        let res: SubmissionResponsePost = res.json()?;
 
         if res.result.was_successful() {
             println!("Task solved successfully!");
@@ -69,7 +63,6 @@ pub fn submit(path: &Path) -> anyhow::Result<()> {
             println!("Task not solved successfully.");
         }
     } else {
-        dbg!(res);
         return Err(anyhow::anyhow!("Response indicates failure"));
     }
 
