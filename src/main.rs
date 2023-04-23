@@ -35,7 +35,6 @@ enum Commands {
         username: String,
         #[arg(short, long)]
         course: String,
-        /// The base URL of the SmartBeans instance, e.g. https://smartbeans.de
         #[arg(long)]
         host: String,
     },
