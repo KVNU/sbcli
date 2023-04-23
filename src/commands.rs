@@ -87,6 +87,16 @@ pub fn list_tasks() -> anyhow::Result<()> {
         );
     }
 
+    // total solved
+    let ratio = solved.len() as f32 / tasks.len() as f32;
+
+    println!(
+        "You have solved {} out of {} tasks ({}%)",
+        solved.len().to_string().bright_green(),
+        tasks.len(),
+        (ratio * 100.0).round().to_string().bright_blue()
+    );
+
     Ok(())
 }
 

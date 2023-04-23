@@ -129,6 +129,10 @@ impl Meta {
         }
     }
 
+    pub fn task_directory(&self) -> &TaskDirectory {
+        &self.task_directory
+    }
+
     pub fn load() -> Result<Self, ConfyError> {
         confy::load::<Self>(APP_NAME, META_FILE_NAME)
     }
