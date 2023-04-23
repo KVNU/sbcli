@@ -149,21 +149,42 @@ impl Meta {
         self.task_directory.directory.get(&task_id)
     }
 
+    fn find_workspace_directory(path: &Path) -> Option<PathBuf> {
+        let mut current_path = path.canonicalize().ok()?;
+
+        loop {
+            // Check if the current path's parent directory is named DIRECTORY_DIR_NAME
+            // TODO: improve this check
+            if let Some(parent) = current_path.parent() {
+                if parent.file_name().unwrap_or_default() == DIRECTORY_DIR_NAME {
+                    return Some(current_path);
+                }
+            }
+
+            // Move up one level in the directory structure
+            current_path = match current_path.parent() {
+                Some(parent_path) => parent_path.to_path_buf(),
+                None => break,
+            };
+        }
+
+        None
+    }
+
+    /// TODO this is a bit hacky, but it works. Fix it tho.
     pub fn get_task_id_from_workspace(&self, task_path: &Path) -> Option<usize> {
         let task_path = task_path
             .canonicalize()
             .expect("Failed to get canonical path");
+
+        let workspace_path =
+            Self::find_workspace_directory(&task_path).expect("Failed to find workspace directory");
+
         self.task_directory
             .directory
             .iter()
             .find(|(_, path)| {
-                // TODO this is a bit hacky, but it works. Fix it tho.
-                path.canonicalize().expect("Failed to get canonical path")
-                    == task_path
-                        .parent() // we get the workspace of the given task
-                        .unwrap()
-                        .canonicalize()
-                        .expect("Failed to get canonical path")
+                path.canonicalize().expect("Failed to get canonical path") == workspace_path
             })
             .map(|(task_id, _)| *task_id)
     }
