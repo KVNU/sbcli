@@ -1,15 +1,12 @@
-use std::{collections::HashMap, path::Path, task};
+use std::{collections::HashMap, path::Path};
 
 use colored::Colorize;
 use reqwest::header::COOKIE;
 use serde::Deserialize;
 
-use crate::{
-    config::{self, Config},
-    tasks::SubmissionPost,
-};
+use crate::config::{self, Config};
 
-use super::SubmissionGet;
+use super::models::{SubmissionGet, SubmissionPost};
 
 #[derive(Debug, Deserialize)]
 struct SubmissionResponseGet {
@@ -33,7 +30,7 @@ pub fn submit(path: &Path) -> anyhow::Result<()> {
     let meta = config::meta::Meta::load()?;
 
     let task_id = meta
-        .get_task_id(path)
+        .get_task_id_from_workspace(path)
         .expect("Task not found at expected path");
     let submission_content = std::fs::read_to_string(path)?;
 
@@ -61,7 +58,7 @@ pub fn submit(path: &Path) -> anyhow::Result<()> {
             meta.add_solved_task_id(task_id);
             meta.save()?;
         } else {
-            println!("Task not solved successfully.");
+            println!("Task not solved successfully.\n-----------------------------");
             println!(
                 "{} | Exit Code: {}\n",
                 res.result.result_type.bright_red(),

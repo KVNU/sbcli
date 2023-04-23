@@ -1,14 +1,15 @@
 pub mod meta;
 mod settings;
 
-use std::path::PathBuf;
-
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 pub const APP_NAME: &str = "sbcli";
 pub const CONFIG_NAME: &str = "config";
 pub const META_FILE_NAME: &str = "meta";
 pub const DIRECTORY_DIR_NAME: &str = "tasks";
+// pub const SESSION_DURATION_SECONDS: usize = 60 * 60 * 24 * 7 * 4; // 1 month
+pub const SESSION_DURATION_SECONDS: usize = 60 * 60 * 12; // 12 hours
 
 /// Application configuration.
 #[derive(Debug, Serialize, Deserialize)]
@@ -18,6 +19,7 @@ pub struct Config {
     pub user: String,
     pub course: String,
     pub token: Option<String>,
+    pub last_login_time: Option<DateTime<Utc>>,
     // pub settings: settings::Settings,
 }
 
@@ -29,6 +31,7 @@ impl Default for Config {
             user: "".to_string(),
             course: "".to_string(),
             token: None,
+            last_login_time: None,
         }
     }
 }
@@ -45,6 +48,17 @@ impl Config {
 
     pub fn store(cfg: &Self) -> Result<(), confy::ConfyError> {
         confy::store(APP_NAME, CONFIG_NAME, cfg)
+    }
+
+    pub fn is_token_valid(&self) -> bool {
+        if let Some(last_login_time) = self.last_login_time {
+            let now = Utc::now();
+            let duration = now.signed_duration_since(last_login_time);
+            let seconds = duration.num_seconds() as usize;
+            seconds < SESSION_DURATION_SECONDS
+        } else {
+            false
+        }
     }
 
     pub fn show() -> Result<(), confy::ConfyError> {

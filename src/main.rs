@@ -2,6 +2,7 @@ mod auth;
 mod commands;
 mod config;
 mod tasks;
+mod util;
 
 use std::path::PathBuf;
 
@@ -82,8 +83,8 @@ fn main() -> anyhow::Result<()> {
 
         Some(Commands::Dbg { print_cli: _ }) => {
             let meta = config::meta::Meta::load()?;
-            let path = dbg!(meta.get_task_path(524)).unwrap();
-            dbg!(meta.get_task_id(path));
+            let path = dbg!(meta.get_task_path(524)).unwrap().join("524.c");
+            dbg!(meta.get_task_id_from_workspace(&path));
         }
 
         Some(Commands::List) => {
