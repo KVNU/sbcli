@@ -92,13 +92,14 @@ impl Meta {
     }
 
     pub fn get_task_id(&self, task_path: &Path) -> Option<usize> {
-        // TODO ensure that this path is relative to the exercises directory
         self.directory
             .iter()
             .find(|(_, path)| {
-                // dbg!(path);
-                // dbg!(task_path);
-                path == &task_path
+                // TODO this is a bit hacky, but it works. Fix it tho.
+                path.canonicalize().expect("Failed to get canonical path")
+                    == task_path
+                        .canonicalize()
+                        .expect("Failed to get canonical path")
             })
             .map(|(task_id, _)| *task_id)
     }
