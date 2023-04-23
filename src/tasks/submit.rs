@@ -18,6 +18,7 @@ struct SubmissionResponse {
 pub fn submit(path: &Path) -> anyhow::Result<()> {
     let cfg: Config = Config::load()?;
 
+    // TODO broken. Use Meta.directory
     let (submission_content, task_id) = read_task_and_id(&path)?;
 
     let url = format!(

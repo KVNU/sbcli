@@ -25,7 +25,7 @@ pub fn configure(username: &str, course: &str, host: &str) -> anyhow::Result<()>
 
     if prompt_for_consent("Do you want to sync the exercises now?") {
         login()?;
-        sync()?;
+        sync(false, true)?;
 
         println!("Setup complete!");
     } else {
@@ -43,10 +43,10 @@ pub fn login() -> anyhow::Result<()> {
     auth::login()
 }
 
-pub fn sync() -> anyhow::Result<()> {
+pub fn sync(force: bool, submissions: bool) -> anyhow::Result<()> {
     ensure_configured()?;
 
-    sync_exercises()?;
+    sync_exercises(force, submissions)?;
 
     let command_str = format!("{} start", env!("CARGO_PKG_NAME")).on_bright_black();
     println!(

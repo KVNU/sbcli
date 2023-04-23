@@ -1,19 +1,50 @@
-{
-    "result": {
-        "user": "bob",
-        "course": "ckurs",
-        "taskid": 2800,
-        "timestamp": 1682179833147,
-        "content": "#include <stdio.h>nnint main(int argc, char const *argv[])n{n    printf(\"Hello World!n\"); // please :)\nreturn 0;\nn}\n",
-        "resultType": "SUCCESS",
-        "simplified": {
-            "compiler": {
-                "stdout": "Your wish has been granted!",
-                "exitCode": 0
-            }
-        },
-        "details": {},
-        "score": 1
-    },
-    "newUnlockedAssets": []
-}
+// {
+//     "result": {
+//         "user": "bob",
+//         "course": "ckurs",
+//         "taskid": 2800,
+//         "timestamp": 1682179833147,
+//         "content": "#include <stdio.h>nnint main(int argc, char const *argv[])n{n    printf(\"Hello World!n\"); // please :)\nreturn 0;\nn}\n",
+//         "resultType": "SUCCESS",
+//         "simplified": {
+//             "compiler": {
+//                 "stdout": "Your wish has been granted!",
+//                 "exitCode": 0
+//             }
+//         },
+//         "details": {},
+//         "score": 1
+//     },
+//     "newUnlockedAssets": []
+// }
+[
+    {
+    id: 2,
+    course: "ckurs",
+    taskid: 519,
+    timestamp: 1682179686249,
+    content: '#include <stdio.h>\n\nint main(int argc, char const *argv[])\n{\n    printf("Hello World!\\n");\n    retur...',
+    resultType: "COMPILE_ERROR",
+    simplified: '{
+                "compiler": {
+                    "stdout": "If you want this task to be accepted, you have to ask nicely (include \\"pleas...',
+    details: "{}",
+    score: 0
+                },
+                {
+    id: 3,
+    course: "ckurs",
+    taskid: 519,
+    timestamp: 1682179709374,
+    content: '#include <stdio.h>\n\nint main(int argc, char const *argv[])\n{\n    printf("Hello World!\\n"); // please...',
+    resultType: "SUCCESS",
+    simplified: '{
+                            "compiler": {
+                                "stdout": "Your wish has been granted!",
+                                "exitCode": 0
+                            }
+                        }',
+    details: "{}",
+    score: 1
+                    }
+                ]

@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use crate::config::{meta::Meta, Config};
 
 use super::{
-    get::{get_progress, get_tasks},
+    get::{get_progress, get_submissions, get_tasks},
     Task,
 };
 
@@ -81,59 +81,84 @@ pub fn make_task_path(task: &Task) -> anyhow::Result<PathBuf> {
     Ok(path)
 }
 
-// pub fn make_task_path(task: &Task) -> anyhow::Result<PathBuf> {
-//     let cfg = Config::load()?;
-//     let path = Path::new(&cfg.exercises_dir).join(format!(
-//         "{}_{}",
-//         task.taskid,
-//         task.task_description.shortname.to_case(Case::Snake)
-//     ));
-
-//     if !path.exists() {
-//         // fs::create_dir_all(&path)?;
-//         fs::create_dir(&path)?;
-//     }
-
-//     let file_name = format!("{}.{}", task.taskid, task.lang);
-//     let file_path = path.join(file_name);
-
-//     Ok(file_path)
-// }
-
 /// Replicates the directory structure of the exercises on the server
 /// in the exercises directory
-pub fn sync_exercises() -> anyhow::Result<()> {
-    init_filesystem().expect("Unable to init filesystem"); // TODO maybe this should be done elsewhere
+/// TODO fix force logic
+pub fn sync_exercises(force: bool, submissions: bool) -> anyhow::Result<()> {
+    init_filesystem()?;
+    let tasks = get_tasks()?;
+    init_meta(&tasks)?;
 
-    let tasks = get_tasks().expect("Unable to get tasks");
-
-    init_meta(&tasks).expect("Unable to init progress");
-
-    // create directory structure
     for task in tasks {
-        let task_path = make_task_path(&task)?;
-        let parent_dir = task_path.parent().unwrap();
-
-        if !parent_dir.exists() {
-            fs::create_dir_all(parent_dir)?;
+        create_task_directories(&task)?;
+        if submissions {
+            create_submissions_directory(&task)?;
+            save_submissions(&task)?;
         }
-
-        let readme_file_path = parent_dir.join("README.md");
-
-        if !task_path.exists() {
-            let content = if task.task_description.default_editor_input.is_empty() {
-                "// Write your code here, and submit your solution once you're done!\n// Read the README for instructions\n".into()
-            } else {
-                task.task_description.default_editor_input
-            };
-
-            fs::write(task_path, content)?;
-            fs::write(readme_file_path, task.task_description.task)?;
-        }
+        write_task_files(&task, force)?;
     }
 
     update_meta()?;
+    Ok(())
+}
 
+fn create_task_directories(task: &Task) -> anyhow::Result<()> {
+    let path = make_task_path(task)?;
+    let parent_dir = path.parent().unwrap();
+    if !parent_dir.exists() {
+        fs::create_dir_all(parent_dir)?;
+    }
+    Ok(())
+}
+
+fn create_submissions_directory(task: &Task) -> anyhow::Result<()> {
+    let path = make_task_path(task)?;
+    let parent_dir = path.parent().unwrap();
+    let submissions_dir = parent_dir.join("submissions");
+    if !submissions_dir.exists() {
+        fs::create_dir(submissions_dir)?;
+    }
+    Ok(())
+}
+
+fn save_submissions(task: &Task) -> anyhow::Result<()> {
+    let submissions = get_submissions(task.taskid)?;
+    let path = make_task_path(task)?;
+    let parent_dir = path.parent().unwrap();
+    let submissions_dir = parent_dir.join("submissions");
+
+    for submission in submissions {
+        let path = submissions_dir.join(format!("{}.{}", submission.timestamp, task.lang));
+        let metadata_path = submissions_dir.join(format!(
+            "{}.{}.metadata.json",
+            submission.timestamp, task.lang
+        ));
+        if !path.exists() {
+            fs::write(path, &submission.content)?;
+            fs::write(
+                metadata_path,
+                serde_json::to_string_pretty(&submission.compiler_msg()?)?,
+            )?;
+        }
+    }
+    Ok(())
+}
+
+fn write_task_files(task: &Task, force: bool) -> anyhow::Result<()> {
+    let task_path = make_task_path(task)?;
+    let parent_dir = task_path.parent().unwrap();
+    let readme_file_path = parent_dir.join("README.md");
+
+    if force || !task_path.exists() {
+        let content = if task.task_description.default_editor_input.is_empty() {
+            "// Write your code here, and submit your solution once you're done!\n// Read the README for instructions\n"
+        } else {
+            &task.task_description.default_editor_input
+        };
+
+        fs::write(task_path, content)?;
+        fs::write(readme_file_path, &task.task_description.task)?;
+    }
     Ok(())
 }
 

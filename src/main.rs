@@ -46,6 +46,9 @@ enum Commands {
         /// This will overwrite any local exercises with the latest submission on SmartBeans
         #[arg(short, long)]
         force: bool,
+        /// Get all submissions for each task
+        #[arg(short, long)]
+        submissions: bool,
     },
     /// List all tasks and their current status
     List,
@@ -85,7 +88,7 @@ fn main() -> anyhow::Result<()> {
 
     match &cli.command {
         Some(Commands::Dbg { print_cli: _ }) => {
-            sync()?;
+            // sync()?;
         }
 
         Some(Commands::List) => {
@@ -104,8 +107,8 @@ fn main() -> anyhow::Result<()> {
             login()?;
         }
 
-        Some(Commands::Sync { force }) => {
-            sync()?;
+        Some(Commands::Sync { force, submissions }) => {
+            sync(*force, *submissions)?;
         }
 
         Some(Commands::Start { task_id }) => {

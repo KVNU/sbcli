@@ -36,6 +36,7 @@ pub fn get_submissions(task_id: usize) -> anyhow::Result<Vec<Submission>> {
         .send()?;
 
     let submissions: Vec<Submission> = res.json()?;
+    // let submissions: Vec<Submission> = Vec::new();
     Ok(submissions)
 }
 
