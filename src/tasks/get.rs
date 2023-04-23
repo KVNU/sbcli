@@ -2,7 +2,7 @@ use reqwest::header::COOKIE;
 
 use crate::config::Config;
 
-use super::{SubmissionGet, Task};
+use super::models::{SubmissionGet, Task};
 
 /// GET /api/courses/{courseId}/tasks
 /// Needs to be authenticated

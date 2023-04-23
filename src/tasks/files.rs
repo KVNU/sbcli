@@ -9,7 +9,7 @@ use crate::config::{meta::Meta, Config};
 
 use super::{
     get::{get_progress, get_submissions, get_tasks},
-    Task,
+    models::Task,
 };
 
 /// Ensures that the configuration file exists

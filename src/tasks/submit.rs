@@ -4,12 +4,9 @@ use colored::Colorize;
 use reqwest::header::COOKIE;
 use serde::Deserialize;
 
-use crate::{
-    config::{self, Config},
-    tasks::SubmissionPost,
-};
+use crate::config::{self, Config};
 
-use super::SubmissionGet;
+use super::models::{SubmissionGet, SubmissionPost};
 
 #[derive(Debug, Deserialize)]
 struct SubmissionResponseGet {

@@ -6,7 +6,7 @@ use std::{
 use confy::ConfyError;
 use serde::{Deserialize, Serialize};
 
-use crate::tasks::{files::make_task_path, Task};
+use crate::tasks::{files::make_task_path, models::Task};
 
 use super::{APP_NAME, DIRECTORY_DIR_NAME, META_FILE_NAME};
 
