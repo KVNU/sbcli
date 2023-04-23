@@ -68,6 +68,8 @@ pub fn submit_task(path: &PathBuf) -> anyhow::Result<()> {
 pub fn list_tasks() -> anyhow::Result<()> {
     ensure_fully_setup()?;
 
+    dbg!("HERE");
+
     let meta = config::meta::Meta::load().unwrap();
     let solved = meta.solved_task_ids();
     let tasks = meta.tasks();

@@ -81,10 +81,13 @@ fn main() -> anyhow::Result<()> {
         }
 
         Some(Commands::Dbg { print_cli: _ }) => {
-            // sync()?;
+            let meta = config::meta::Meta::load()?;
+            let path = dbg!(meta.get_task_path(524)).unwrap();
+            dbg!(meta.get_task_id(path));
         }
 
         Some(Commands::List) => {
+            dbg!("list tasks");
             list_tasks()?;
         }
 

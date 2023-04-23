@@ -12,10 +12,10 @@ use super::{
     Task,
 };
 
-/// Creates the exercises directory if it doesn't exist
+/// Ensures that the configuration file exists
 pub fn init_filesystem() -> anyhow::Result<()> {
     let _ = Config::load()?;
-    let _ = Meta::init()?;
+    let _ = Meta::load()?;
 
     Ok(())
 }
@@ -23,7 +23,6 @@ pub fn init_filesystem() -> anyhow::Result<()> {
 /// Creates the meta file if it doesn't exist
 /// and initializes it with the number of tasks for the course and the order
 pub fn init_meta(tasks: &[Task]) -> anyhow::Result<()> {
-    // let cfg = Config::load()?;
     let meta = Meta::load()?;
     if meta.total_tasks == 0 {
         let meta = Meta::new(tasks);
@@ -36,7 +35,8 @@ pub fn init_meta(tasks: &[Task]) -> anyhow::Result<()> {
 /// Manages tracking of progress
 /// - Updates the progress files list of solved tasks
 /// - Updates the next task to be solved according to the orderings of the tasks
-pub fn update_meta() -> anyhow::Result<()> {
+/// TODO track progress offline
+pub fn update_meta_progress() -> anyhow::Result<()> {
     let solved = get_progress()?;
 
     let mut progress = Meta::load()?;
@@ -53,6 +53,7 @@ pub fn make_task_path(task: &Task) -> anyhow::Result<PathBuf> {
     let meta = Meta::load()?;
     let dir_path =
         format!("{:04}_{}", task.order_by, task.task_description.shortname).to_case(Case::Snake);
+
     let path = Path::new(&meta.directory_dir())
         .join(dir_path)
         .join(format!("{}.{}", task.taskid, task.lang));
@@ -66,18 +67,19 @@ pub fn make_task_path(task: &Task) -> anyhow::Result<PathBuf> {
 pub fn sync_exercises(force: bool, submissions: bool) -> anyhow::Result<()> {
     init_filesystem()?;
     let tasks = get_tasks()?;
-    init_meta(&tasks)?;
 
-    for task in tasks {
-        create_task_directories(&task)?;
+    for task in &tasks {
+        create_task_directories(task)?;
         if submissions {
-            create_submissions_directory(&task)?;
-            save_submissions(&task)?;
+            create_submissions_directory(task)?;
+            save_submissions(task)?;
         }
-        write_task_files(&task, force)?;
+        write_task_files(task, force)?;
     }
 
-    update_meta()?;
+    // HACK positional stuff. make this more robust
+    init_meta(&tasks)?;
+    update_meta_progress()?;
     Ok(())
 }
 
