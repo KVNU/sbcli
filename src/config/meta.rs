@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::tasks::{files::make_task_path, Task};
 
 const META_FILE_NAME: &str = ".meta.json";
-const DIRECTORY_DIR_NAME_BASE: &str = "./tasks";
+const DIRECTORY_DIR_NAME_BASE: &str = "tasks";
 
 /// Meta is a struct that contains information about the current state of the exercises directory
 /// It is serialized to a file in the exercises directory
@@ -93,6 +93,7 @@ impl Meta {
 
     pub fn get_task_id(&self, task_path: &Path) -> Option<usize> {
         // TODO ensure that this path is relative to the exercises directory
+        // split from `
         self.directory
             .iter()
             .find(|(_, path)| {

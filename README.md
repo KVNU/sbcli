@@ -1,8 +1,47 @@
 # About
 
+Current `MVP` version: `0.1.0`
+Some features are still missing, but the core functionality is there.
+
 `sbcli` is a command line interface for the SmartBeans[^sb_gitlab] application.
 
 We communicate mainly with the [SmartApe](^https://gitlab.gwdg.de/smart/smartape-dokumentation/) system via its [API](https://gitlab.gwdg.de/smart/smartape-dokumentation/-/wikis/api).
+
+# Installation
+
+We don't have a release yet, so you'll have to build from source.
+
+### Prerequisites
+
+- [Rust](https://www.rust-lang.org/tools/install)
+- [Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html)
+
+OpenSSL is required for the `reqwest` crate, which we use for HTTP requests. See [here](https://docs.rs/reqwest/latest/reqwest/index.html#tls) for more information.
+
+### Building
+
+`cargo build --release`
+
+# Usage
+
+### Prerequisites
+
+A SmartBeans account which has password authentication enabled. Token login is wip.
+
+### Commands
+
+The CLI is organized into subcommands. To see a list of available subcommands, run `sbcli --help`.
+You'll need to configure the CLI before you can use it. Run `sbcli config` with all required arguments to do so.
+
+If you're not logged in, it'll ask if you want to do so. Otherwise, run `sbcli login` to log in.
+
+Then you'll want to run `sbcli sync` to download the exercise directory from SmartBeans. This will create a directory called `tasks` in the current working directory. You can change this by setting the `SBCLI_EXERCISE_DIR` environment variable(wip).
+
+Next, you can run `sbcli start` to start a new exercise. By default, this will open the next exercise in order using your default editor.
+
+Once you're done, you can run `sbcli submit` to submit your solution to SmartBeans.
+
+Run `sbcli list` to see a list of all exercises in the exercise directory and their current status.
 
 # Design
 
