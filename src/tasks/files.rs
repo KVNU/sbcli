@@ -84,7 +84,7 @@ pub fn sync_exercises(force: bool, submissions: bool) -> anyhow::Result<()> {
 }
 
 fn create_task_directories(task: &Task) -> anyhow::Result<()> {
-    let (dir_path, task_path) = make_task_path(task)?;
+    let (dir_path, _) = make_task_path(task)?;
     if !dir_path.exists() {
         fs::create_dir_all(dir_path)?;
     }
@@ -92,7 +92,7 @@ fn create_task_directories(task: &Task) -> anyhow::Result<()> {
 }
 
 fn create_submissions_directory(task: &Task) -> anyhow::Result<()> {
-    let (dir_path, task_path) = make_task_path(task)?;
+    let (dir_path, _) = make_task_path(task)?;
     let submissions_dir = dir_path.join("submissions");
     if !submissions_dir.exists() {
         fs::create_dir(submissions_dir)?;
@@ -102,7 +102,7 @@ fn create_submissions_directory(task: &Task) -> anyhow::Result<()> {
 
 fn save_submissions(task: &Task) -> anyhow::Result<()> {
     let submissions = get_submissions(task.taskid)?;
-    let (dir_path, task_path) = make_task_path(task)?;
+    let (dir_path, _) = make_task_path(task)?;
     let submissions_dir = dir_path.join("submissions");
 
     for submission in submissions {

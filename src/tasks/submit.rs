@@ -61,7 +61,7 @@ pub fn submit(path: &Path) -> anyhow::Result<()> {
             meta.add_solved_task_id(task_id);
             meta.save()?;
         } else {
-            println!("Task not solved successfully.\n-------------------------");
+            println!("Task not solved successfully.\n-----------------------------");
             println!(
                 "{} | Exit Code: {}\n",
                 res.result.result_type.bright_red(),

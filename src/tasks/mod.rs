@@ -38,6 +38,7 @@ pub struct Tag {
     pub points: Option<usize>,
 }
 
+/// TODO deduplicate this by using optional fields.
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct SubmissionPost {
     pub user: String,
@@ -57,6 +58,7 @@ impl SubmissionPost {
     }
 }
 
+/// TODO deduplicate this by using optional fields.
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct SubmissionGet {
     pub id: usize,

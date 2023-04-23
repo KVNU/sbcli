@@ -23,5 +23,6 @@ serde_with = "2.3.2"
 chrono = { version = "0.4.24", features = ["serde"] }
 
 [dependencies.confy]
+version = "0.5.1"
 features = ["ron_conf"]
 default-features = false

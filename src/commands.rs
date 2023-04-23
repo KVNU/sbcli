@@ -1,7 +1,4 @@
-use std::{
-    io::{self, Write},
-    path::Path,
-};
+use std::path::Path;
 
 use anyhow::Ok;
 use colored::Colorize;
@@ -25,10 +22,10 @@ pub fn configure(username: &str, course: &str, host: &str) -> anyhow::Result<()>
     Config::store(&cfg)?;
 
     if prompt_for_consent("Do you want to sync the exercises now?") {
-        login()?;
+        ensure_auth()?;
         sync(false, true)?;
 
-        println!("Setup complete!");
+        println!("{}", "Setup complete!".green());
     } else {
         let command_str = format!("`{} sync`", env!("CARGO_PKG_NAME")).on_bright_black();
         let msg = format!("Configuration complete!\nYou'll need to run {} to sync the exercises before you can start working on them.", command_str);
@@ -150,7 +147,7 @@ fn ensure_configured() -> anyhow::Result<()> {
             eprintln!("{}", stderr);
         }
 
-        anyhow::bail!("Please configure the CLI first.");
+        anyhow::bail!("{}", "Please configure the CLI first.".bright_red());
     }
 
     Ok(())
@@ -161,7 +158,7 @@ fn ensure_tasks_init() -> anyhow::Result<()> {
     let meta = config::meta::Meta::load()?;
 
     if meta.tasks().is_empty() {
-        anyhow::bail!("Please sync the tasks first.");
+        anyhow::bail!("{}", "Please sync the exercises first.".bright_red());
     }
 
     Ok(())

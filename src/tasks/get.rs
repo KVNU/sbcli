@@ -35,9 +35,7 @@ pub fn get_submissions(task_id: usize) -> anyhow::Result<Vec<SubmissionGet>> {
         .header(COOKIE, format!("token={}", cfg.token.unwrap()))
         .send()?;
 
-    let submissions: Vec<SubmissionGet> = res.json()?;
-    // let submissions: Vec<Submission> = Vec::new();
-    Ok(submissions)
+    Ok(res.json()?)
 }
 
 /// GET /api/courses/{courseId}/progress
