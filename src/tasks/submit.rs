@@ -8,7 +8,7 @@ use crate::config::{self, Config};
 
 use super::models::{SubmissionGet, SubmissionPost};
 
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 struct SubmissionResponseGet {
     result: SubmissionGet,
     #[serde(skip)]
@@ -16,7 +16,7 @@ struct SubmissionResponseGet {
     new_unlocked_assets: Vec<String>, // don't know the structure of this object, if it's not just a list of strings
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 struct SubmissionResponsePost {
     result: SubmissionPost,
     #[serde(skip)]

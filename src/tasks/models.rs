@@ -70,20 +70,20 @@ pub struct SubmissionGet {
     pub score: f32,
 }
 
-impl SubmissionGet {
-    pub fn was_successful(&self) -> bool {
-        self.score >= 1.
-    }
+// impl SubmissionGet {
+// pub fn was_successful(&self) -> bool {
+//     self.score >= 1.
+// }
 
-    // pub fn simplified(&self) -> Simplified {
-    //     // let simplified: Simplified = serde_json::from_str(&self.simplified).unwrap();
-    //     // Ok(self.simplified.clone()) // todo unecessary with prod api
-    // }
+// pub fn simplified(&self) -> Simplified {
+//     // let simplified: Simplified = serde_json::from_str(&self.simplified).unwrap();
+//     // Ok(self.simplified.clone()) // todo unecessary with prod api
+// }
 
-    // pub fn compiler_msg(&self) -> Compiler {
-    //     // Ok(self.simplified()?.compiler)
-    // }
-}
+// pub fn compiler_msg(&self) -> Compiler {
+//     // Ok(self.simplified()?.compiler)
+// }
+// }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Simplified {

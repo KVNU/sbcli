@@ -61,9 +61,9 @@ impl Config {
         }
     }
 
-    pub fn show() -> Result<(), confy::ConfyError> {
-        let cfg = Self::load()?;
-        println!("{:#?}", cfg);
-        Ok(())
-    }
+    // pub fn show() -> Result<(), confy::ConfyError> {
+    //     let cfg = Self::load()?;
+    //     println!("{:#?}", cfg);
+    //     Ok(())
+    // }
 }
