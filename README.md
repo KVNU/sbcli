@@ -22,6 +22,9 @@ OpenSSL is required for the `reqwest` crate, which we use for HTTP requests. See
 
 `cargo build --release`
 
+### Installing
+`cargo install --path <project_dir>`
+
 # Usage
 
 ### Prerequisites
