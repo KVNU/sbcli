@@ -28,8 +28,17 @@ echo "Platform detected: $platform"
 
 # Fetch the latest release version
 latest_release_url="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases/latest"
+
 latest_release_tag=$(curl -sL $latest_release_url | jq -r '.tag_name')
-# latest_release_tag=$(curl -sL $latest_release_url | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+
+if command -v jq > /dev/null 2>&1; then
+  # Use jq if available
+  latest_release_tag=$(curl -sL $latest_release_url | jq -r '.tag_name')
+else
+  # Fallback to grep and sed
+  latest_release_tag=$(curl -sL $latest_release_url | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+fi
+
 echo "Latest release tag: $latest_release_tag"
 
 # Download the binary for the detected platform
