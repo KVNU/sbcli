@@ -26,6 +26,7 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
+    #[cfg(debug_assertions)]
     Dbg {
         #[arg(short, long)]
         print_cli: bool,
@@ -34,12 +35,15 @@ enum Commands {
     Configure {
         #[arg(short, long)]
         username: String,
+        /// The course name, e.g. "ckurs"
         #[arg(short, long)]
         course: String,
+        /// The host of the SmartBeans instance, e.g. https://c109-223.cloud.gwdg.de
         #[arg(long)]
         host: String,
     },
-    /// TODO: 1. token login 2. select course from list of options
+    // TODO: 1. token login 2. select course from list of options
+    /// Login to SmartBeans
     Login,
     /// Get the tasks for the current course and save them locally
     Sync {
@@ -53,6 +57,7 @@ enum Commands {
     },
     /// List all tasks and their current status
     List,
+    #[cfg(debug_assertions)] // TODO: implement
     /// Show your progress
     Progress,
     /// Work on the next task, or the task with the given ID
@@ -73,18 +78,19 @@ fn main() -> anyhow::Result<()> {
     }
 
     match &cli.command {
+        #[cfg(debug_assertions)]
+        Some(Commands::Dbg { print_cli: _ }) => {
+            let meta = config::meta::Meta::load()?;
+            let path = dbg!(meta.get_task_path(524)).unwrap().join("524.c");
+            dbg!(meta.get_task_id_from_workspace(&path));
+        }
+
         Some(Commands::Configure {
             username,
             course,
             host,
         }) => {
             configure(username, course, host)?;
-        }
-
-        Some(Commands::Dbg { print_cli: _ }) => {
-            let meta = config::meta::Meta::load()?;
-            let path = dbg!(meta.get_task_path(524)).unwrap().join("524.c");
-            dbg!(meta.get_task_id_from_workspace(&path));
         }
 
         Some(Commands::List) => {
