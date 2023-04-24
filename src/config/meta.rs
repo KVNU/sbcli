@@ -15,8 +15,9 @@ use super::{APP_NAME, DIRECTORY_DIR_NAME, META_FILE_NAME};
 ///
 /// This struct is designed to be part of the `Meta` struct, providing a clean separation of concerns
 /// between the task-specific data and other application state.
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TaskDirectory {
+    path: PathBuf,
     tasks: Vec<Task>,
     solved_tasks_ids: Vec<usize>,
     /// <task_id, order_by>
@@ -25,23 +26,48 @@ pub struct TaskDirectory {
     directory: HashMap<usize, PathBuf>,
 }
 
+impl Default for TaskDirectory {
+    fn default() -> Self {
+        // on windows, the default exercises directory is %USERPROFILE%\sbcli\<DIR_NAME>
+        // on linux, the default exercises directory is $HOME/sbcli/
+        let path = dirs::home_dir()
+            .map(|mut p| {
+                p.push(APP_NAME);
+                p.push(DIRECTORY_DIR_NAME);
+                p
+            })
+            .unwrap_or_else(|| PathBuf::from(APP_NAME));
+
+        Self {
+            path,
+            tasks: Vec::new(),
+            solved_tasks_ids: Vec::new(),
+            order: HashMap::new(),
+            directory: HashMap::new(),
+        }
+    }
+}
+
 impl TaskDirectory {
     pub fn new(tasks: &[Task]) -> Self {
+        let d = Self::default();
+
         let tasks = tasks.to_owned();
         let order = Self::get_order(&tasks);
         let directory = tasks
             .iter()
             .map(|task| {
-                let (dir_path, _) = make_task_path(task).unwrap();
+                let (dir_path, _) = make_task_path(task, &d.path).unwrap();
                 (task.taskid, dir_path)
             })
             .collect::<HashMap<usize, PathBuf>>();
 
         Self {
+            path: d.path,
             tasks,
             order,
             directory,
-            ..Default::default()
+            ..d
         }
     }
 
@@ -85,43 +111,18 @@ impl TaskDirectory {
 ///
 /// The `Meta` struct also contains a `TaskDirectory`, which is responsible for maintaining task-specific data.
 /// The `Meta` struct provides methods for loading, saving, and updating the state.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 
 pub struct Meta {
     pub total_tasks: usize,
     pub solved_tasks: usize,
     pub next_task_id: usize,
-    directory_dir: PathBuf,
     task_directory: TaskDirectory,
-}
-
-impl Default for Meta {
-    fn default() -> Self {
-        // on windows, the default exercises directory is %USERPROFILE%\sbcli\<DIR_NAME>
-        // on linux, the default exercises directory is $HOME/sbcli/
-        let directory_dir = dirs::home_dir()
-            .map(|mut p| {
-                p.push(APP_NAME);
-                p.push(DIRECTORY_DIR_NAME);
-                p
-            })
-            .unwrap_or_else(|| PathBuf::from(APP_NAME));
-        // let meta_path = directory_dir.join(META_FILE_NAME);
-
-        Self {
-            total_tasks: 0,
-            solved_tasks: 0,
-            next_task_id: 0,
-            directory_dir,
-            task_directory: TaskDirectory::default(),
-        }
-    }
 }
 
 impl Meta {
     pub fn new(tasks: &[Task]) -> Self {
-        let tasks = tasks.to_owned();
-        let task_directory = TaskDirectory::new(&tasks);
+        let task_directory = TaskDirectory::new(tasks);
 
         Self {
             total_tasks: tasks.len(),
@@ -147,7 +148,7 @@ impl Meta {
     }
 
     pub fn directory_dir(&self) -> &Path {
-        &self.directory_dir
+        &self.task_directory.path
     }
 
     pub fn get_task_path(&self, task_id: usize) -> Option<&PathBuf> {

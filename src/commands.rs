@@ -7,11 +7,12 @@ use itertools::Itertools;
 use crate::{
     auth::{self, ensure_auth},
     config::{self, Config},
-    tasks::{self, files::sync_exercises},
+    requests,
+    tasks::{self, files::sync_tasks_async},
     util::prompt_for_consent,
 };
 
-pub fn configure(username: &str, course: &str, host: &str) -> anyhow::Result<()> {
+pub async fn configure(username: &str, course: &str, host: &str) -> anyhow::Result<()> {
     let mut cfg = Config::load()?;
 
     cfg.version = env!("CARGO_PKG_VERSION").to_string();
@@ -23,7 +24,7 @@ pub fn configure(username: &str, course: &str, host: &str) -> anyhow::Result<()>
 
     if prompt_for_consent("Do you want to sync the exercises now?") {
         ensure_auth()?;
-        sync(false, true)?;
+        sync(false, true).await?;
 
         println!("{}", "Setup complete!".green());
     } else {
@@ -41,10 +42,12 @@ pub fn login() -> anyhow::Result<()> {
     auth::login()
 }
 
-pub fn sync(force: bool, submissions: bool) -> anyhow::Result<()> {
+pub async fn sync(force: bool, submissions: bool) -> anyhow::Result<()> {
     ensure_configured_and_auth()?;
+    let api_client = requests::ApiClient::new()?;
 
-    sync_exercises(force, submissions)?;
+    // sync_exercises(force, submissions)?;
+    sync_tasks_async(force, submissions, &api_client).await?;
     let meta = config::meta::Meta::load()?;
 
     let command_str = format!("{} start", env!("CARGO_PKG_NAME")).on_bright_black();
@@ -57,10 +60,12 @@ pub fn sync(force: bool, submissions: bool) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn submit_task(path: &Path) -> anyhow::Result<()> {
+pub async fn submit_task(path: &Path) -> anyhow::Result<()> {
     ensure_fully_setup()?;
 
-    tasks::submit::submit(path)
+    // tasks::submit::submit(path)
+    let result = dbg!(requests::ApiClient::new()?.submit_task(path).await?);
+    Ok(())
 }
 
 pub fn list_tasks() -> anyhow::Result<()> {

@@ -1,9 +1,12 @@
+use std::{collections::HashMap, path::Path};
+
 use reqwest::header::COOKIE;
 use reqwest::Client;
+use serde::Deserialize;
 
 use crate::{
-    config::Config,
-    tasks::models::{SubmissionGet, Task},
+    config::{self, Config},
+    tasks::models::{SubmissionGet, SubmissionPost, Task},
 };
 
 /// An API client for SmartBeans
@@ -113,4 +116,42 @@ impl ApiClient {
 
         Ok(detailed_submissions)
     }
+
+    pub async fn submit_task(&self, path: &Path) -> anyhow::Result<SubmissionResponsePost> {
+        let meta = config::meta::Meta::load()?;
+
+        let task_id = meta
+            .get_task_id_from_workspace(path)
+            .expect("Task not found at expected path");
+        let submission_content = std::fs::read_to_string(path)?;
+
+        let url = format!(
+            "{}/api/courses/{}/tasks/{}/submissions",
+            self.config.host, self.config.course, task_id
+        );
+
+        let mut request_body = HashMap::new();
+        request_body.insert("submission", &submission_content);
+        let res = self
+            .client
+            .post(url)
+            .json(&request_body)
+            .header(COOKIE, format!("token={}", self.config.token))
+            .send()
+            .await?;
+
+        if res.status().is_success() {
+            Ok(res.json().await?)
+        } else {
+            Err(anyhow::anyhow!("Response indicates failure"))
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SubmissionResponsePost {
+    pub result: SubmissionPost,
+    #[serde(skip)]
+    #[serde(rename = "newUnlockedAssets")]
+    pub new_unlocked_assets: Vec<String>, // don't know the structure of this object, if it's not just a list of strings
 }

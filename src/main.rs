@@ -116,7 +116,7 @@ async fn main() -> anyhow::Result<()> {
             course,
             host,
         }) => {
-            configure(username, course, host)?;
+            configure(username, course, host).await?;
         }
 
         Some(Commands::List) => {
@@ -133,11 +133,11 @@ async fn main() -> anyhow::Result<()> {
         }
 
         Some(Commands::Submit { path }) => {
-            submit_task(path)?;
+            submit_task(path).await?;
         }
 
         Some(Commands::Sync { force, submissions }) => {
-            sync(*force, *submissions)?;
+            sync(*force, *submissions).await?;
         }
 
         _ => {}
