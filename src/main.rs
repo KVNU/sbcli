@@ -72,18 +72,14 @@ fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     // Using custom config
-    if cli.config.is_some() {
-        Config::store(&Config::default())?;
-        return Ok(());
+    if let Some(config_path) = cli.config {
+        let config: Config = confy::load_path(config_path)?;
+        config.store()?;
     }
 
     match &cli.command {
         #[cfg(debug_assertions)]
-        Some(Commands::Dbg { print_cli: _ }) => {
-            let meta = config::meta::Meta::load()?;
-            let path = dbg!(meta.get_task_path(524)).unwrap().join("524.c");
-            dbg!(meta.get_task_id_from_workspace(&path));
-        }
+        Some(Commands::Dbg { print_cli: _ }) => {}
 
         Some(Commands::Configure {
             username,

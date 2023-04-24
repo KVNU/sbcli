@@ -18,7 +18,23 @@ Some features are still missing, but the core functionality is there.
 
 We have releases for Linux, Windows and MacOS. You can find them [here](https://github.com/KVNU/sbcli/releases).
 
-Put the executable in your `PATH` and you're good to go.
+You can easily install the latest release of `sbcli` using the provided installation script. Run the following command in your terminal to download and execute the script:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/KVNU/sbcli/main/install.sh | bash
+```
+
+or, if you don't have curl installed:
+
+```bash
+wget -qO- https://raw.githubusercontent.com/KVNU/sbcli/main/install.sh | bash
+```
+
+The script will automatically detect your platform and try to install the latest release.
+
+Please note that moving the binary to your PATH may require administrative privileges on some systems. If you encounter permission issues, try running the script with administrative privileges or manually move the binary to a directory in your PATH.
+
+You'll also need either `jq` or `grep` installed.
 
 ## Building from source
 
