@@ -73,21 +73,11 @@ pub async fn sync_tasks_async(
 
     let _ = futures::future::join_all(task_futures).await;
 
-    // // HACK positional stuff. make this more robust
-    init_meta(&tasks)?;
+    // HACK positional stuff. make this more robust
     // TODO
-    // this crashes with async, because it somehow creates nested runtimes ??? idk
     // Honestly, the whole persistence aspect of `Meta` should be reworked anyway
-    // update_meta_progress().await?;
-    // Meta::update_progress(client).await?;
-
-    // let solved_tasks = client.get_solved_task_ids().await?;
-    // let solved_tasks = Vec::new();
-    // let mut meta = Meta::load()?;
-    // let mut meta = Meta::new(&tasks);
-    // dbg!(&meta);
-    // meta.set_solved_tasks_ids(solved_tasks);
-    // meta.save()?;
+    init_meta(&tasks)?;
+    Meta::update_progress(client).await?;
 
     Ok(())
 }
