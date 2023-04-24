@@ -1,6 +1,7 @@
 # About
 
-[This](https://github.com/kvnu/sbcli.git) repository is currently mirrored on [GitLab](https://gitlab.gwdg.de/l.keiser/sbcli.git).
+> [This](https://github.com/kvnu/sbcli.git) repository is currently mirrored on [GitLab](https://gitlab.gwdg.de/l.keiser/sbcli.git).
+
 Current `MVP` version: `0.1.0`
 Some features are still missing, but the core functionality is there.
 
