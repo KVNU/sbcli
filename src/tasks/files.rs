@@ -117,36 +117,15 @@ fn create_submissions_directory(task: &Task) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn save_submissions(task: &Task) -> anyhow::Result<()> {
-    let submissions = get_submissions(task.taskid)?;
-    let (dir_path, _) = make_task_path(task)?;
-    let submissions_dir = dir_path.join("submissions");
-
-    for submission in submissions {
-        let path = submissions_dir.join(format!("{}.{}", submission.timestamp, task.lang));
-        let metadata_path = submissions_dir.join(format!(
-            "{}.{}.metadata.json",
-            submission.timestamp, task.lang
-        ));
-        if !path.exists() {
-            fs::write(path, &submission.content)?;
-            fs::write(
-                metadata_path,
-                serde_json::to_string_pretty(&submission.simplified.compiler)?,
-            )?;
-        }
-    }
-    Ok(())
-}
-
-/// TODO bit hacky.
+/// TODO bit hacky. Use proper deserialization.
+/// Sync submissions for a task
 fn save_detailed_submissions(task: &Task) -> anyhow::Result<()> {
     let submissions = get_detailed_submissions(task.taskid)?;
     let (dir_path, _) = make_task_path(task)?;
     let submissions_dir = dir_path.join("submissions");
 
     for submission in submissions {
-        let timestamp = submission.get("timestamp").unwrap().as_str().unwrap();
+        let timestamp = submission.get("timestamp").unwrap().as_str().unwrap(); // sometimes int, sometimes string. String always deserializes correctly
         let result_type = submission.get("resultType").unwrap().as_str().unwrap();
         let path = submissions_dir.join(format!("{}-{}.{}", timestamp, result_type, task.lang));
         let metadata_path = submissions_dir.join(format!(
