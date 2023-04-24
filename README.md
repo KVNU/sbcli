@@ -8,7 +8,7 @@ Some features are still missing, but the core functionality is there.
 
 # Installation
 
-We have release for Linux, Windows and MacOS. You can find them [here](https://github.com/KVNU/sbcli/releases).
+We have releases for Linux, Windows and MacOS. You can find them [here](https://github.com/KVNU/sbcli/releases).
 
 ## Building from source
 ### Prerequisites
