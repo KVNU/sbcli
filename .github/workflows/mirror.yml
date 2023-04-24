@@ -16,5 +16,5 @@ jobs:
         run: |
           git clone --mirror "https://github.com/$GITHUB_REPOSITORY.git" repo
           cd repo
-          git remote add gitlab "https://${GITLAB_TOKEN}@${GITLAB_REPO#https://}"
-          git push --mirror gitlab
+          git remote add gitlab "$GITLAB_REPO"
+          GIT_SSH_COMMAND='ssh -o "StrictHostKeyChecking=no"' git push --mirror gitlab
