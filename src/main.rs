@@ -89,17 +89,18 @@ async fn main() -> anyhow::Result<()> {
             let start = std::time::Instant::now();
 
             let api_client = ApiClient::new()?;
-            let tasks = api_client.get_tasks().await?;
 
-            let mut task_futures = Vec::new();
-            for task in tasks {
-                println!("task: {}, {}", task.taskid, task.task_description.shortname);
-                let future = api_client.get_detailed_submissions(task.taskid);
-                task_futures.push(future);
-            }
+            // let tasks = api_client.get_tasks().await?;
 
-            let all_tasks = futures::future::join_all(task_futures).await;
-            let all_tasks = all_tasks.into_iter().flatten().collect::<Vec<_>>();
+            // let mut task_futures = Vec::new();
+            // for task in tasks {
+            //     println!("task: {}, {}", task.taskid, task.task_description.shortname);
+            //     let future = api_client.get_detailed_submissions(task.taskid);
+            //     task_futures.push(future);
+            // }
+
+            // let all_tasks = futures::future::join_all(task_futures).await;
+            // let all_tasks = all_tasks.into_iter().flatten().collect::<Vec<_>>();
 
             // for task in all_tasks {
             //     println!("task: {}, {}", task.taskid, task.task_description.shortname);
@@ -107,8 +108,42 @@ async fn main() -> anyhow::Result<()> {
             // }
 
             let elapsed = start.elapsed();
-            dbg!(all_tasks.len());
+            // dbg!(all_tasks.len());
             dbg!(elapsed);
+
+            let submissions = api_client.get_detailed_submissions(519).await?;
+            // dbg!(&submissions[3]);
+            // println!(
+            //     "{}",
+            //     submissions[3]
+            //         .get("simplified")
+            //         .unwrap()
+            //         .as_object()
+            //         .unwrap()
+            //         .get("testCase")
+            //         .unwrap()
+            //         .as_object()
+            //         .unwrap()
+            //         .get("message")
+            //         .unwrap()
+            //         .as_str()
+            //         .unwrap()
+            // );
+            // find latest
+            let latest_submission = submissions
+                .iter()
+                .max_by_key(|s| {
+                    let timestamp = s.get("timestamp").unwrap();
+
+                    if timestamp.is_u64() {
+                        timestamp.as_u64().unwrap()
+                    } else {
+                        timestamp.as_str().unwrap().parse::<u64>().unwrap()
+                    }
+                })
+                .unwrap();
+
+            dbg!(latest_submission);
         }
 
         Some(Commands::Configure {

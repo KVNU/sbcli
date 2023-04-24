@@ -170,7 +170,6 @@ impl ApiClient {
 
         if res.status().is_success() {
             Ok(res.json().await?)
-            // TODO update progress state
         } else {
             Err(anyhow::anyhow!("Response indicates failure"))
         }

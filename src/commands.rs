@@ -3,6 +3,7 @@ use std::path::Path;
 use anyhow::Ok;
 use colored::Colorize;
 use itertools::Itertools;
+use serde_json::json;
 
 use crate::{
     auth::{self, ensure_auth},
@@ -63,8 +64,92 @@ pub async fn sync(force: bool, submissions: bool) -> anyhow::Result<()> {
 pub async fn submit_task(path: &Path) -> anyhow::Result<()> {
     ensure_fully_setup().await?;
 
-    // tasks::submit::submit(path)
-    let result = dbg!(requests::ApiClient::new()?.submit_task(path).await?);
+    let client = requests::ApiClient::new()?;
+    let res = client.submit_task(path).await?;
+
+    // check if the task was solved correctly
+    if res.result.was_successful() {
+        println!(
+            "{}",
+            "Congratulations! You solved the task correctly!".green()
+        );
+
+        let mut meta = config::meta::Meta::load()?;
+        meta.add_solved_task_id(res.result.taskid);
+        meta.save()?;
+    } else {
+        println!("Unfortunately, your solution is not correct yet. Keep trying!\n");
+        // :')
+        // what a mess of code. I'm sorry.
+        // println!("{}", "Here's a cookie for your effort: 🍪".bright_blue());
+        if !res.result.simplified.compiler.stdout.is_empty() {
+            println!("Compiler Output:\n");
+            println!("{}", res.result.simplified.compiler.stdout.on_black());
+        }
+
+        let submissions = client.get_detailed_submissions(res.result.taskid).await?;
+        // find latest submission
+        // Object {
+        //     "content": String(""),
+        //     "course": String(""),
+        //     "details": Object {},
+        //     "id": Number(0),
+        //     "resultType": String("WRONG_ANSWER|COMPILER_ERROR|SUCCESS"),
+        //     "score": Number(0),
+        //     "simplified": Object {
+        //         "compiler": Object {
+        //             "exitCode": Number(0),
+        //             "stdout": String(""),
+        //         },
+        //         "testCase": Object {
+        //             "exitCode": Number(0),
+        //             "expectedStdout": String("n"),
+        //             "stdin": String(""),
+        //             "stdout": String(""),
+        //         },
+        //     },
+        //     "taskid": Number(0),
+        //     "timestamp": String(""),
+        // }
+        if let Some(latest_submission) = submissions.iter().max_by_key(|s| {
+            let timestamp = s.get("timestamp").unwrap();
+
+            if timestamp.is_u64() {
+                timestamp.as_u64().unwrap()
+            } else {
+                timestamp.as_str().unwrap().parse::<u64>().unwrap()
+            }
+        }) {
+            if let Some(object) = latest_submission.get("simplified") {
+                if let Some(object) = object.get("testCase") {
+                    println!(
+                        "Tests:\n{}\n",
+                        object
+                            .get("message")
+                            .unwrap_or(&json!("()"))
+                            .as_str()
+                            .unwrap()
+                    );
+                    if let Some(expected_stdout) = object.get("expectedStdout") {
+                        println!(
+                            "Expected stdout:\n{}",
+                            expected_stdout.as_str().unwrap_or("")
+                        );
+                    }
+                    if let Some(stdout) = object.get("stdout") {
+                        println!("Actual stdout:\n{}", stdout.as_str().unwrap_or(""));
+                    }
+                }
+            }
+        }
+
+        // Print result type and exit code
+        println!(
+            "{} | Exit Code: {}\n",
+            res.result.result_type.bright_red(),
+            res.result.simplified.compiler.exit_code
+        );
+    }
     Ok(())
 }
 
