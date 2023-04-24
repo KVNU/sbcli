@@ -46,7 +46,8 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.rust_target }}
-          path: target/${{ matrix.rust_target }}/release/${{ env.BINARY_NAME }}
+          path: |
+            target/${{ matrix.rust_target }}/release/${{ env.BINARY_NAME }}*
 
   release:
     needs: build
