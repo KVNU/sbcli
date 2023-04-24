@@ -1,7 +1,6 @@
 use std::path::{Path, PathBuf};
 
 use tokio::fs;
-use tokio::io::AsyncWriteExt;
 
 use convert_case::{Case, Casing};
 
@@ -10,10 +9,7 @@ use crate::{
     requests::ApiClient,
 };
 
-use super::{
-    get::{get_detailed_submissions, get_progress, get_submissions, get_tasks},
-    models::Task,
-};
+use super::models::Task;
 
 /// Ensures that the configuration file exists
 pub fn init_filesystem() -> anyhow::Result<()> {
@@ -31,22 +27,6 @@ pub fn init_meta(tasks: &[Task]) -> anyhow::Result<()> {
         let meta = Meta::new(tasks);
         meta.save()?;
     }
-
-    Ok(())
-}
-
-/// Manages tracking of progress
-/// - Updates the progress files list of solved tasks
-/// - Updates the next task to be solved according to the orderings of the tasks
-/// TODO track progress offline
-/// TODO associate with the Meta struct
-pub fn update_meta_progress() -> anyhow::Result<()> {
-    let solved = get_progress()?;
-
-    let mut progress = Meta::load()?;
-
-    progress.set_solved_tasks_ids(solved);
-    progress.save()?;
 
     Ok(())
 }
@@ -69,10 +49,10 @@ pub fn make_task_path(task: &Task, task_dir: &Path) -> anyhow::Result<(PathBuf, 
 pub async fn sync_tasks_async(
     force: bool,
     submissions: bool,
-    api_client: &ApiClient,
+    client: &ApiClient,
 ) -> anyhow::Result<()> {
     init_filesystem()?;
-    let tasks = api_client.get_tasks().await?;
+    let tasks = client.get_tasks().await?;
 
     let total_tasks = tasks.len();
     println!("Syncing {} tasks", total_tasks);
@@ -82,7 +62,7 @@ pub async fn sync_tasks_async(
             create_task_directories(task).await?;
             if submissions {
                 // NOTE: probably no big benefit if we were to use a separate futures queue for this
-                sync_submissions_async(task, api_client).await?;
+                sync_submissions_async(task, client).await?;
             }
             write_task_files(task, force).await?;
 
@@ -98,7 +78,16 @@ pub async fn sync_tasks_async(
     // TODO
     // this crashes with async, because it somehow creates nested runtimes ??? idk
     // Honestly, the whole persistence aspect of `Meta` should be reworked anyway
-    // update_meta_progress()?;
+    // update_meta_progress().await?;
+    // Meta::update_progress(client).await?;
+
+    // let solved_tasks = client.get_solved_task_ids().await?;
+    // let solved_tasks = Vec::new();
+    // let mut meta = Meta::load()?;
+    // let mut meta = Meta::new(&tasks);
+    // dbg!(&meta);
+    // meta.set_solved_tasks_ids(solved_tasks);
+    // meta.save()?;
 
     Ok(())
 }

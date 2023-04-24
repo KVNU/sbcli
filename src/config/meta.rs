@@ -4,9 +4,13 @@ use std::{
 };
 
 use confy::ConfyError;
+use futures::TryFutureExt;
 use serde::{Deserialize, Serialize};
 
-use crate::tasks::{files::make_task_path, models::Task};
+use crate::{
+    requests::ApiClient,
+    tasks::{files::make_task_path, models::Task},
+};
 
 use super::{APP_NAME, DIRECTORY_DIR_NAME, META_FILE_NAME};
 
@@ -141,6 +145,16 @@ impl Meta {
 
     pub fn save(&self) -> Result<(), ConfyError> {
         confy::store(APP_NAME, META_FILE_NAME, self)
+    }
+
+    /// uuugh, this is a mess
+    /// the whole load/save/update thing needs to be reworked
+    /// This function in particular should just be part of some kind of init flow, since we update progress on every submit by adding the task id
+    pub async fn update_progress(client: &ApiClient) -> anyhow::Result<()> {
+        let solved_tasks = client.get_solved_task_ids().await?;
+        let mut meta = Self::load()?;
+        meta.set_solved_tasks_ids(solved_tasks);
+        Ok(meta.save()?)
     }
 
     pub fn tasks(&self) -> &[Task] {

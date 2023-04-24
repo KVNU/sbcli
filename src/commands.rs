@@ -23,7 +23,7 @@ pub async fn configure(username: &str, course: &str, host: &str) -> anyhow::Resu
     Config::store(&cfg)?;
 
     if prompt_for_consent("Do you want to sync the exercises now?") {
-        ensure_auth()?;
+        ensure_auth().await?;
         sync(false, true).await?;
 
         println!("{}", "Setup complete!".green());
@@ -36,14 +36,14 @@ pub async fn configure(username: &str, course: &str, host: &str) -> anyhow::Resu
     Ok(())
 }
 
-pub fn login() -> anyhow::Result<()> {
+pub async fn login() -> anyhow::Result<()> {
     ensure_configured()?;
 
-    auth::login()
+    auth::login().await
 }
 
 pub async fn sync(force: bool, submissions: bool) -> anyhow::Result<()> {
-    ensure_configured_and_auth()?;
+    ensure_configured_and_auth().await?;
     let api_client = requests::ApiClient::new()?;
 
     // sync_exercises(force, submissions)?;
@@ -61,15 +61,15 @@ pub async fn sync(force: bool, submissions: bool) -> anyhow::Result<()> {
 }
 
 pub async fn submit_task(path: &Path) -> anyhow::Result<()> {
-    ensure_fully_setup()?;
+    ensure_fully_setup().await?;
 
     // tasks::submit::submit(path)
     let result = dbg!(requests::ApiClient::new()?.submit_task(path).await?);
     Ok(())
 }
 
-pub fn list_tasks() -> anyhow::Result<()> {
-    ensure_fully_setup()?;
+pub async fn list_tasks() -> anyhow::Result<()> {
+    ensure_fully_setup().await?;
 
     let meta = config::meta::Meta::load().unwrap();
     let solved = meta.solved_task_ids();
@@ -105,8 +105,8 @@ pub fn list_tasks() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn start_task(task_id: Option<usize>) -> anyhow::Result<()> {
-    ensure_fully_setup()?;
+pub async fn start_task(task_id: Option<usize>) -> anyhow::Result<()> {
+    ensure_fully_setup().await?;
     let meta = config::meta::Meta::load()?;
 
     let task_id = task_id.unwrap_or(meta.next_task_id);
@@ -179,17 +179,17 @@ fn ensure_tasks_init() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn ensure_configured_and_auth() -> anyhow::Result<()> {
+async fn ensure_configured_and_auth() -> anyhow::Result<()> {
     ensure_configured()?;
-    ensure_auth()?;
+    ensure_auth().await?;
 
     Ok(())
 }
 
-fn ensure_fully_setup() -> anyhow::Result<()> {
+async fn ensure_fully_setup() -> anyhow::Result<()> {
     ensure_configured()?;
     ensure_tasks_init()?;
-    ensure_auth()?;
+    ensure_auth().await?;
 
     Ok(())
 }

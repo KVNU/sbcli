@@ -121,15 +121,15 @@ async fn main() -> anyhow::Result<()> {
 
         Some(Commands::List) => {
             dbg!("list tasks");
-            list_tasks()?;
+            list_tasks().await?;
         }
 
         Some(Commands::Login) => {
-            login()?;
+            login().await?;
         }
 
         Some(Commands::Start { task_id }) => {
-            start_task(*task_id)?;
+            start_task(*task_id).await?;
         }
 
         Some(Commands::Submit { path }) => {

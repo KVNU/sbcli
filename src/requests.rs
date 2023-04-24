@@ -22,6 +22,34 @@ impl ApiClient {
         Ok(Self { client, config })
     }
 
+    pub fn check_auth(&self) -> anyhow::Result<()> {
+        if self.config.token.is_empty() {
+            anyhow::bail!("You are not authenticated. Please run `sb login` first.");
+        }
+        Ok(())
+    }
+
+    // pub fn login()
+
+    /// GET /api/courses/{courseId}/progress
+    /// Needs to be authenticated
+    /// Returns a list of task ids that have been solved
+    pub async fn get_solved_task_ids(&self) -> anyhow::Result<Vec<usize>> {
+        let url = format!(
+            "{}/api/courses/{}/progress",
+            self.config.host, self.config.course
+        );
+
+        let client = reqwest::Client::new();
+        let res = client
+            .get(url)
+            .header(COOKIE, format!("token={}", self.config.token))
+            .send()
+            .await?;
+        let progress: Vec<usize> = res.json().await?;
+        Ok(progress)
+    }
+
     pub async fn get_tasks(&self) -> anyhow::Result<Vec<Task>> {
         let url = format!(
             "{}/api/courses/{}/tasks",
@@ -142,6 +170,7 @@ impl ApiClient {
 
         if res.status().is_success() {
             Ok(res.json().await?)
+            // TODO update progress state
         } else {
             Err(anyhow::anyhow!("Response indicates failure"))
         }
