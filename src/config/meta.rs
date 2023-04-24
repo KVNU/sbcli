@@ -4,7 +4,6 @@ use std::{
 };
 
 use confy::ConfyError;
-use futures::TryFutureExt;
 use serde::{Deserialize, Serialize};
 
 use crate::{
