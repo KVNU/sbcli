@@ -79,7 +79,11 @@ fn main() -> anyhow::Result<()> {
 
     match &cli.command {
         #[cfg(debug_assertions)]
-        Some(Commands::Dbg { print_cli: _ }) => {}
+        Some(Commands::Dbg { print_cli: _ }) => {
+            let detailed_submissions = tasks::get::get_detailed_submissions(521)?;
+            dbg!(&detailed_submissions);
+            dbg!(detailed_submissions.len());
+        }
 
         Some(Commands::Configure {
             username,

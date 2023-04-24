@@ -38,6 +38,35 @@ pub fn get_submissions(task_id: usize) -> anyhow::Result<Vec<SubmissionGet>> {
     Ok(res.json()?)
 }
 
+/// GET /api/courses/{courseId}/tasks/{taskId}/submissions/{submissionId}
+/// This endpoint returns a submission with all the details, like test cases
+pub fn get_submission(task_id: usize, submission_id: usize) -> anyhow::Result<serde_json::Value> {
+    let cfg = Config::load()?;
+    let url = format!(
+        "{}/api/courses/{}/tasks/{}/submissions/{}",
+        cfg.host, cfg.course, task_id, submission_id
+    );
+
+    let client = reqwest::blocking::Client::new();
+    let res = client
+        .get(url)
+        .header(COOKIE, format!("token={}", cfg.token.unwrap()))
+        .send()?;
+
+    Ok(res.json::<serde_json::Value>()?)
+}
+
+/// This is a very expensive operation. It gets all the submissions for a task and then gets the details for each submission.
+pub fn get_detailed_submissions(task_id: usize) -> anyhow::Result<Vec<serde_json::Value>> {
+    let submissions = get_submissions(task_id)?;
+    let mut detailed_submissions = Vec::new();
+    for submission in submissions {
+        let detailed_submission = get_submission(task_id, submission.id)?;
+        detailed_submissions.push(detailed_submission);
+    }
+    Ok(detailed_submissions)
+}
+
 /// GET /api/courses/{courseId}/progress
 /// Needs to be authenticated
 /// Returns a list of task ids that have been solved

@@ -16,7 +16,7 @@ struct SubmissionResponseGet {
     new_unlocked_assets: Vec<String>, // don't know the structure of this object, if it's not just a list of strings
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 struct SubmissionResponsePost {
     result: SubmissionPost,
     #[serde(skip)]
@@ -50,7 +50,7 @@ pub fn submit(path: &Path) -> anyhow::Result<()> {
         .send()?;
 
     if res.status().is_success() {
-        let res: SubmissionResponsePost = res.json()?;
+        let res: SubmissionResponsePost = dbg!(res.json()?);
 
         if res.result.was_successful() {
             println!("{}", "Task solved successfully!".bright_green());

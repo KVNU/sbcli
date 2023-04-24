@@ -8,7 +8,7 @@ use convert_case::{Case, Casing};
 use crate::config::{meta::Meta, Config};
 
 use super::{
-    get::{get_progress, get_submissions, get_tasks},
+    get::{get_detailed_submissions, get_progress, get_submissions, get_tasks},
     models::Task,
 };
 
@@ -74,7 +74,8 @@ pub fn sync_exercises(force: bool, submissions: bool) -> anyhow::Result<()> {
         // TODO sync submissions is sloooow. We'd need async, then batch requests etc.
         if submissions {
             create_submissions_directory(task)?;
-            save_submissions(task)?;
+            // save_submissions(task)?;
+            save_detailed_submissions(task)?;
         }
         write_task_files(task, force)?;
 
@@ -133,6 +134,29 @@ fn save_submissions(task: &Task) -> anyhow::Result<()> {
                 metadata_path,
                 serde_json::to_string_pretty(&submission.simplified.compiler)?,
             )?;
+        }
+    }
+    Ok(())
+}
+
+/// TODO bit hacky.
+fn save_detailed_submissions(task: &Task) -> anyhow::Result<()> {
+    let submissions = get_detailed_submissions(task.taskid)?;
+    let (dir_path, _) = make_task_path(task)?;
+    let submissions_dir = dir_path.join("submissions");
+
+    for submission in submissions {
+        let timestamp = submission.get("timestamp").unwrap().as_str().unwrap();
+        let result_type = submission.get("resultType").unwrap().as_str().unwrap();
+        let path = submissions_dir.join(format!("{}-{}.{}", timestamp, result_type, task.lang));
+        let metadata_path = submissions_dir.join(format!(
+            "{}-{}.{}.metadata.json",
+            timestamp, result_type, task.lang
+        ));
+
+        if !path.exists() {
+            fs::write(path, &submission.get("content").unwrap().to_string())?;
+            fs::write(metadata_path, serde_json::to_string_pretty(&submission)?)?;
         }
     }
     Ok(())
