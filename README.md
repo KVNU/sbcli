@@ -1,16 +1,24 @@
 # About
+
 [This](https://github.com/kvnu/sbcli.git) repository is currently mirrored on [GitLab](https://gitlab.gwdg.de/l.keiser/sbcli.git).
 Current `MVP` version: `0.1.0`
 Some features are still missing, but the core functionality is there.
 
-
 `sbcli` is a command line interface for the SmartBeans[^sb_gitlab] application.
+
+## Known issues
+
+- The CLI currently only works with the production API, not the local dev server. This is because the production API is slightly different from the dev server. A solution for this is wip.
+- The CLI currently only works with password authentication. Token authentication is wip.
+- The CLI currently only allows submitting exercises that are in a workspace (i.e. in the directory that has been created by `sbcli sync`).
+- On Windows, `sbcli login` apparently doesn't work when using git bash. Powershell 7 and `cmd` work fine, though.
 
 # Installation
 
 We have releases for Linux, Windows and MacOS. You can find them [here](https://github.com/KVNU/sbcli/releases).
 
 ## Building from source
+
 ### Prerequisites
 
 - [Rust](https://www.rust-lang.org/tools/install)
@@ -23,6 +31,7 @@ OpenSSL is required for the `reqwest` crate, which we use for HTTP requests. See
 `cargo build --release`
 
 ### Installing
+
 `cargo install --path <project_dir>`
 
 # Usage
@@ -36,10 +45,12 @@ As of the latest commit, it's not possible to use the local dev server, because 
 
 The CLI is organized into subcommands. To see a list of available subcommands, run `sbcli --help`.
 You'll need to configure the CLI before you can use it. Run
+
 ```sh
 sbcli config -u USERNAME -c COURSE --host HOST
 ```
- with all required arguments to do so.
+
+with all required arguments to do so.
 
 If you're not logged in, it'll ask if you want to do so. Otherwise, run `sbcli login` to log in.
 
