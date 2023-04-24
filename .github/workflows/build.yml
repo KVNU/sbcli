@@ -7,6 +7,9 @@ on:
     tags:
       - "v*"
 
+env:
+  BINARY_NAME: sbcli
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -43,7 +46,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.rust_target }}
-          path: target/${{ matrix.rust_target }}/release/sbcli
+          path: target/${{ matrix.rust_target }}/release/${{ env.BINARY_NAME }}
 
   release:
     needs: build
@@ -62,7 +65,11 @@ jobs:
         run: |
           mkdir -p release
           for platform in x86_64-unknown-linux-gnu x86_64-apple-darwin x86_64-pc-windows-msvc; do
-            cp artifacts/$platform/sbcli release/sbcli-$platform;
+            if [[ $platform == "x86_64-pc-windows-msvc" ]]; then
+              cp artifacts/$platform/${{ env.BINARY_NAME }}.exe release/${{ env.BINARY_NAME }}-$platform.exe;
+            else
+              cp artifacts/$platform/${{ env.BINARY_NAME }} release/${{ env.BINARY_NAME }}-$platform;
+            fi
           done
 
       - name: Create GitHub Release
