@@ -1,11 +1,10 @@
 # About
-
+[This](https://github.com/kvnu/sbcli.git) repository is currently mirrored on [GitLab](https://gitlab.gwdg.de/l.keiser/sbcli.git).
 Current `MVP` version: `0.1.0`
 Some features are still missing, but the core functionality is there.
 
-`sbcli` is a command line interface for the SmartBeans[^sb_gitlab] application.
 
-We communicate mainly with the [SmartApe](^https://gitlab.gwdg.de/smart/smartape-dokumentation/) system via its [API](https://gitlab.gwdg.de/smart/smartape-dokumentation/-/wikis/api).
+`sbcli` is a command line interface for the SmartBeans[^sb_gitlab] application.
 
 # Installation
 
