@@ -9,8 +9,9 @@ We communicate mainly with the [SmartApe](^https://gitlab.gwdg.de/smart/smartape
 
 # Installation
 
-We don't have a release yet, so you'll have to build from source.
+We have release for Linux, Windows and MacOS. You can find them [here](https://github.com/KVNU/sbcli/releases).
 
+## Building from source
 ### Prerequisites
 
 - [Rust](https://www.rust-lang.org/tools/install)
