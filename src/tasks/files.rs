@@ -1,16 +1,15 @@
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
+
+use tokio::fs;
 
 use convert_case::{Case, Casing};
 
-use crate::config::{meta::Meta, Config};
-
-use super::{
-    get::{get_progress, get_submissions, get_tasks},
-    models::Task,
+use crate::{
+    config::{meta::Meta, Config},
+    requests::ApiClient,
 };
+
+use super::models::Task;
 
 /// Ensures that the configuration file exists
 pub fn init_filesystem() -> anyhow::Result<()> {
@@ -32,28 +31,11 @@ pub fn init_meta(tasks: &[Task]) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Manages tracking of progress
-/// - Updates the progress files list of solved tasks
-/// - Updates the next task to be solved according to the orderings of the tasks
-/// TODO track progress offline
-/// TODO associate with the Meta struct
-pub fn update_meta_progress() -> anyhow::Result<()> {
-    let solved = get_progress()?;
-
-    let mut progress = Meta::load()?;
-
-    progress.set_solved_tasks_ids(solved);
-    progress.save()?;
-
-    Ok(())
-}
-
 /// Generates a path to a task directory
 /// The format is: <task_order>_<task_shortname>
 /// Returns a tuple of the directory path (`workspace`) and the task file path
-pub fn make_task_path(task: &Task) -> anyhow::Result<(PathBuf, PathBuf)> {
-    let meta = Meta::load()?;
-    let dir_path = Path::new(&meta.directory_dir()).join(
+pub fn make_task_path(task: &Task, task_dir: &Path) -> anyhow::Result<(PathBuf, PathBuf)> {
+    let dir_path = task_dir.join(
         format!("{:04}_{}", task.order_by, task.task_description.shortname).to_case(Case::Snake),
     );
 
@@ -64,82 +46,84 @@ pub fn make_task_path(task: &Task) -> anyhow::Result<(PathBuf, PathBuf)> {
 
 /// Replicates the directory structure of the exercises on the server
 /// in the exercises directory
-pub fn sync_exercises(force: bool, submissions: bool) -> anyhow::Result<()> {
+pub async fn sync_tasks_async(
+    force: bool,
+    submissions: bool,
+    client: &ApiClient,
+) -> anyhow::Result<()> {
     init_filesystem()?;
-    let tasks = get_tasks()?;
+    let tasks = client.get_tasks().await?;
 
     let total_tasks = tasks.len();
-    for (index, task) in tasks.iter().enumerate() {
-        create_task_directories(task)?;
-        // TODO sync submissions is sloooow. We'd need async, then batch requests etc.
-        if submissions {
-            create_submissions_directory(task)?;
-            save_submissions(task)?;
-        }
-        write_task_files(task, force)?;
+    println!("Syncing {} tasks", total_tasks);
+    let mut task_futures = Vec::new();
+    for task in tasks.iter() {
+        let future = async {
+            create_task_directories(task).await?;
+            if submissions {
+                // NOTE: probably no big benefit if we were to use a separate futures queue for this
+                sync_submissions_async(task, client).await?;
+            }
+            write_task_files(task, force).await?;
 
-        // Print progress
-        let progress = ((index + 1) as f32 / total_tasks as f32) * 100.0;
-        print!(
-            "\rSyncing tasks: {:.2}% ({}/{})",
-            progress,
-            index + 1,
-            total_tasks
-        );
-        std::io::Write::flush(&mut std::io::stdout())?;
+            anyhow::Ok(())
+        };
+        task_futures.push(future);
     }
+
+    let _ = futures::future::join_all(task_futures).await;
 
     // HACK positional stuff. make this more robust
+    // TODO
+    // Honestly, the whole persistence aspect of `Meta` should be reworked anyway
     init_meta(&tasks)?;
-    update_meta_progress()?;
-
-    // Clear
-    print!("\r");
+    Meta::update_progress(client).await?;
 
     Ok(())
 }
 
-fn create_task_directories(task: &Task) -> anyhow::Result<()> {
-    let (dir_path, _) = make_task_path(task)?;
-    if !dir_path.exists() {
-        fs::create_dir_all(dir_path)?;
-    }
-    Ok(())
-}
-
-fn create_submissions_directory(task: &Task) -> anyhow::Result<()> {
-    let (dir_path, _) = make_task_path(task)?;
+/// Syncs the submissions for a task
+/// TODO using serde_json::Value is a bit of a hack I guess
+async fn sync_submissions_async(task: &Task, api_client: &ApiClient) -> anyhow::Result<()> {
+    let submissions = api_client.get_detailed_submissions(task.taskid).await?;
+    let meta = Meta::load()?;
+    let (dir_path, _) = make_task_path(task, meta.directory_dir())?;
     let submissions_dir = dir_path.join("submissions");
+
     if !submissions_dir.exists() {
-        fs::create_dir(submissions_dir)?;
+        fs::create_dir(&submissions_dir).await?;
     }
-    Ok(())
-}
 
-fn save_submissions(task: &Task) -> anyhow::Result<()> {
-    let submissions = get_submissions(task.taskid)?;
-    let (dir_path, _) = make_task_path(task)?;
-    let submissions_dir = dir_path.join("submissions");
-
+    // TODO make concurrent
     for submission in submissions {
-        let path = submissions_dir.join(format!("{}.{}", submission.timestamp, task.lang));
+        let timestamp = submission.get("timestamp").unwrap().as_str().unwrap(); // sometimes int, sometimes string. String always deserializes correctly
+        let result_type = submission.get("resultType").unwrap().as_str().unwrap();
+        let path = submissions_dir.join(format!("{}-{}.{}", timestamp, result_type, task.lang));
         let metadata_path = submissions_dir.join(format!(
-            "{}.{}.metadata.json",
-            submission.timestamp, task.lang
+            "{}-{}.{}.metadata.json",
+            timestamp, result_type, task.lang
         ));
+
         if !path.exists() {
-            fs::write(path, &submission.content)?;
-            fs::write(
-                metadata_path,
-                serde_json::to_string_pretty(&submission.simplified.compiler)?,
-            )?;
+            fs::write(path, &submission.get("content").unwrap().to_string()).await?;
+            fs::write(metadata_path, serde_json::to_string_pretty(&submission)?).await?;
         }
     }
     Ok(())
 }
 
-fn write_task_files(task: &Task, force: bool) -> anyhow::Result<()> {
-    let (dir_path, task_path) = make_task_path(task)?;
+async fn create_task_directories(task: &Task) -> anyhow::Result<()> {
+    let meta = Meta::load()?;
+    let (dir_path, _) = make_task_path(task, meta.directory_dir())?;
+    if !dir_path.exists() {
+        fs::create_dir_all(dir_path).await?;
+    }
+    Ok(())
+}
+
+async fn write_task_files(task: &Task, force: bool) -> anyhow::Result<()> {
+    let meta = Meta::load()?;
+    let (dir_path, task_path) = make_task_path(task, meta.directory_dir())?;
     let readme_file_path = dir_path.join("README.md");
 
     if force || !task_path.exists() {
@@ -149,8 +133,8 @@ fn write_task_files(task: &Task, force: bool) -> anyhow::Result<()> {
             &task.task_description.default_editor_input
         };
 
-        fs::write(task_path, content)?;
-        fs::write(readme_file_path, &task.task_description.task)?;
+        fs::write(task_path, content).await?;
+        fs::write(readme_file_path, &task.task_description.task).await?;
     }
     Ok(())
 }

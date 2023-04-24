@@ -10,24 +10,24 @@ struct LoginResponse {
 }
 
 // TODO: check if session is still valid
-pub fn ensure_auth() -> anyhow::Result<()> {
+pub async fn ensure_auth() -> anyhow::Result<()> {
     let cfg = config::Config::load()?;
 
-    if cfg.token.is_none() || cfg.last_login_time.is_none() || !cfg.is_token_valid() {
-        login()?;
+    if cfg.token.is_empty() || cfg.last_login_time.is_none() || !cfg.is_token_valid() {
+        login().await?;
     }
 
     Ok(())
 }
 
 /// POST /api/auth/login
-pub fn login() -> anyhow::Result<()> {
+pub async fn login() -> anyhow::Result<()> {
     let mut cfg = config::Config::load()?;
 
     println!("You need to login to continue.");
     let password = rpassword::prompt_password("Password: ")?;
 
-    let client = reqwest::blocking::Client::new();
+    let client = reqwest::Client::new();
 
     let mut data = HashMap::new();
     data.insert("username", &cfg.user);
@@ -37,14 +37,15 @@ pub fn login() -> anyhow::Result<()> {
     let res = client
         .post(format!("{}/api/auth/login", cfg.host))
         .json(&data)
-        .send()?;
+        .send()
+        .await?;
 
     if res.status().is_success() {
         println!("Login successful");
 
-        let body: LoginResponse = res.json()?;
+        let body: LoginResponse = res.json().await?;
 
-        cfg.token = Some(body.token);
+        cfg.token = body.token;
         cfg.last_login_time = Some(chrono::Utc::now());
         config::Config::store(&cfg)?;
     } else {

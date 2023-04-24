@@ -3,15 +3,17 @@ use std::path::Path;
 use anyhow::Ok;
 use colored::Colorize;
 use itertools::Itertools;
+use serde_json::json;
 
 use crate::{
     auth::{self, ensure_auth},
     config::{self, Config},
-    tasks::{self, files::sync_exercises},
+    requests,
+    tasks::{self, files::sync_tasks_async},
     util::prompt_for_consent,
 };
 
-pub fn configure(username: &str, course: &str, host: &str) -> anyhow::Result<()> {
+pub async fn configure(username: &str, course: &str, host: &str) -> anyhow::Result<()> {
     let mut cfg = Config::load()?;
 
     cfg.version = env!("CARGO_PKG_VERSION").to_string();
@@ -22,8 +24,8 @@ pub fn configure(username: &str, course: &str, host: &str) -> anyhow::Result<()>
     Config::store(&cfg)?;
 
     if prompt_for_consent("Do you want to sync the exercises now?") {
-        ensure_auth()?;
-        sync(false, true)?;
+        ensure_auth().await?;
+        sync(false, true).await?;
 
         println!("{}", "Setup complete!".green());
     } else {
@@ -35,16 +37,18 @@ pub fn configure(username: &str, course: &str, host: &str) -> anyhow::Result<()>
     Ok(())
 }
 
-pub fn login() -> anyhow::Result<()> {
+pub async fn login() -> anyhow::Result<()> {
     ensure_configured()?;
 
-    auth::login()
+    auth::login().await
 }
 
-pub fn sync(force: bool, submissions: bool) -> anyhow::Result<()> {
-    ensure_configured_and_auth()?;
+pub async fn sync(force: bool, submissions: bool) -> anyhow::Result<()> {
+    ensure_configured_and_auth().await?;
+    let api_client = requests::ApiClient::new()?;
 
-    sync_exercises(force, submissions)?;
+    // sync_exercises(force, submissions)?;
+    sync_tasks_async(force, submissions, &api_client).await?;
     let meta = config::meta::Meta::load()?;
 
     let command_str = format!("{} start", env!("CARGO_PKG_NAME")).on_bright_black();
@@ -57,14 +61,100 @@ pub fn sync(force: bool, submissions: bool) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn submit_task(path: &Path) -> anyhow::Result<()> {
-    ensure_fully_setup()?;
+pub async fn submit_task(path: &Path) -> anyhow::Result<()> {
+    ensure_fully_setup().await?;
 
-    tasks::submit::submit(path)
+    let client = requests::ApiClient::new()?;
+    let res = client.submit_task(path).await?;
+
+    // check if the task was solved correctly
+    if res.result.was_successful() {
+        println!(
+            "{}",
+            "Congratulations! You solved the task correctly!".green()
+        );
+
+        let mut meta = config::meta::Meta::load()?;
+        meta.add_solved_task_id(res.result.taskid);
+        meta.save()?;
+    } else {
+        println!("Unfortunately, your solution is not correct yet. Keep trying!\n");
+        // :')
+        // what a mess of code. I'm sorry.
+        // println!("{}", "Here's a cookie for your effort: 🍪".bright_blue());
+        if !res.result.simplified.compiler.stdout.is_empty() {
+            println!("Compiler Output:\n");
+            println!("{}", res.result.simplified.compiler.stdout.on_black());
+        }
+
+        let submissions = client.get_detailed_submissions(res.result.taskid).await?;
+        // find latest submission
+        // Object {
+        //     "content": String(""),
+        //     "course": String(""),
+        //     "details": Object {},
+        //     "id": Number(0),
+        //     "resultType": String("WRONG_ANSWER|COMPILER_ERROR|SUCCESS"),
+        //     "score": Number(0),
+        //     "simplified": Object {
+        //         "compiler": Object {
+        //             "exitCode": Number(0),
+        //             "stdout": String(""),
+        //         },
+        //         "testCase": Object {
+        //             "exitCode": Number(0),
+        //             "expectedStdout": String("n"),
+        //             "stdin": String(""),
+        //             "stdout": String(""),
+        //         },
+        //     },
+        //     "taskid": Number(0),
+        //     "timestamp": String(""),
+        // }
+        if let Some(latest_submission) = submissions.iter().max_by_key(|s| {
+            let timestamp = s.get("timestamp").unwrap();
+
+            if timestamp.is_u64() {
+                timestamp.as_u64().unwrap()
+            } else {
+                timestamp.as_str().unwrap().parse::<u64>().unwrap()
+            }
+        }) {
+            if let Some(object) = latest_submission.get("simplified") {
+                if let Some(object) = object.get("testCase") {
+                    println!(
+                        "Tests:\n{}\n",
+                        object
+                            .get("message")
+                            .unwrap_or(&json!("()"))
+                            .as_str()
+                            .unwrap()
+                    );
+                    if let Some(expected_stdout) = object.get("expectedStdout") {
+                        println!(
+                            "Expected stdout:\n{}",
+                            expected_stdout.as_str().unwrap_or("")
+                        );
+                    }
+                    if let Some(stdout) = object.get("stdout") {
+                        println!("Actual stdout:\n{}", stdout.as_str().unwrap_or(""));
+                    }
+                }
+            }
+        }
+
+        // Print result type and exit code
+        println!(
+            "{} | Exit Code: {}\n",
+            res.result.result_type.bright_red(),
+            res.result.simplified.compiler.exit_code
+        );
+    }
+    Ok(())
 }
 
-pub fn list_tasks() -> anyhow::Result<()> {
-    ensure_fully_setup()?;
+pub async fn list_tasks() -> anyhow::Result<()> {
+    ensure_fully_setup().await?;
 
     let meta = config::meta::Meta::load().unwrap();
     let solved = meta.solved_task_ids();
@@ -100,8 +190,8 @@ pub fn list_tasks() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn start_task(task_id: Option<usize>) -> anyhow::Result<()> {
-    ensure_fully_setup()?;
+pub async fn start_task(task_id: Option<usize>) -> anyhow::Result<()> {
+    ensure_fully_setup().await?;
     let meta = config::meta::Meta::load()?;
 
     let task_id = task_id.unwrap_or(meta.next_task_id);
@@ -174,17 +264,17 @@ fn ensure_tasks_init() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn ensure_configured_and_auth() -> anyhow::Result<()> {
+async fn ensure_configured_and_auth() -> anyhow::Result<()> {
     ensure_configured()?;
-    ensure_auth()?;
+    ensure_auth().await?;
 
     Ok(())
 }
 
-fn ensure_fully_setup() -> anyhow::Result<()> {
+async fn ensure_fully_setup() -> anyhow::Result<()> {
     ensure_configured()?;
     ensure_tasks_init()?;
-    ensure_auth()?;
+    ensure_auth().await?;
 
     Ok(())
 }

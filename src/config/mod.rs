@@ -18,7 +18,7 @@ pub struct Config {
     pub host: String,
     pub user: String,
     pub course: String,
-    pub token: Option<String>,
+    pub token: String,
     pub last_login_time: Option<DateTime<Utc>>,
     // pub settings: settings::Settings,
 }
@@ -30,7 +30,7 @@ impl Default for Config {
             host: "".to_string(),
             user: "".to_string(),
             course: "".to_string(),
-            token: None,
+            token: "".to_string(),
             last_login_time: None,
         }
     }
