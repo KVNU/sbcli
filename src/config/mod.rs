@@ -46,8 +46,8 @@ impl Config {
         confy::load::<Self>(APP_NAME, CONFIG_NAME)
     }
 
-    pub fn store(cfg: &Self) -> Result<(), confy::ConfyError> {
-        confy::store(APP_NAME, CONFIG_NAME, cfg)
+    pub fn store(&self) -> Result<(), confy::ConfyError> {
+        confy::store(APP_NAME, CONFIG_NAME, self)
     }
 
     pub fn is_token_valid(&self) -> bool {
