@@ -54,6 +54,7 @@ impl TaskDirectory {
     }
 
     /// Returns the ID of the next task to be solved
+    /// If all tasks have been solved, returns 0
     fn get_next_task(&self) -> usize {
         let highest_solved_order = self
             .solved_tasks_ids
