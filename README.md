@@ -41,12 +41,13 @@ OpenSSL is required for the `reqwest` crate, which we use for HTTP requests. See
 ### Prerequisites
 
 A SmartBeans account which has password authentication enabled. Token login is wip.
-As of the latest commit, it's not possible to use the local dev server, because the CLI uses the production API, which is, for some reason, slightly different from the dev server. A flexible solution for this is wip.
 
 ### Commands
 
 The CLI is organized into subcommands. To see a list of available subcommands, run `sbcli --help`.
-You'll need to configure the CLI before you can use it. Run
+You'll need to configure the CLI before you can use it.
+
+Run:
 
 ```sh
 sbcli config -u USERNAME -c COURSE --host HOST
@@ -54,17 +55,15 @@ sbcli config -u USERNAME -c COURSE --host HOST
 
 with all required arguments to do so.
 
-If you're not logged in, it'll ask if you want to do so. Otherwise, run `sbcli login` to log in.
+If you're not logged in, it'll ask if you want to do so. You can run `sbcli login` to log in at any time.
 
 Then you'll want to run `sbcli sync` to download the exercise directory from SmartBeans, if you haven't done so during configuration. This will create a directory called `tasks` at `<home_dir>/sbcli`. You can change this by setting the `SBCLI_EXERCISE_DIR` environment variable(wip).
 
-Next, you can run `sbcli start` to start a new exercise. By default, this will open the next exercise in order using your default editor.
+Next, you can run `sbcli start` to start a new exercise. By default, this will open the next exercise in order using your default editor. If you want to work on a specific exercise, you can run `sbcli list` to see a list of all exercises and their current status. Then you can run `sbcli start TASK_ID` to start working on that exercise.
 
-Once you're done, you can run `sbcli submit PATH_TO_SOLUTION` to submit your solution to SmartBeans.
+Once you're done, you can run `sbcli submit PATH_TO_SOLUTION` to submit your solution to SmartBeans. Please note that you can only submit files that are in a workspace, i.e. in the directory that has been created by `sbcli sync`.
 
 It's currently **not** possible to submit files are **not in a workspace**.
-
-Run `sbcli list` to see a list of all exercises in the exercise directory and their current status.
 
 # Design
 
