@@ -13,7 +13,7 @@ struct LoginResponse {
 pub fn ensure_auth() -> anyhow::Result<()> {
     let cfg = config::Config::load()?;
 
-    if cfg.token.is_none() || cfg.last_login_time.is_none() || !cfg.is_token_valid() {
+    if cfg.token.is_empty() || cfg.last_login_time.is_none() || !cfg.is_token_valid() {
         login()?;
     }
 
@@ -44,7 +44,7 @@ pub fn login() -> anyhow::Result<()> {
 
         let body: LoginResponse = res.json()?;
 
-        cfg.token = Some(body.token);
+        cfg.token = body.token;
         cfg.last_login_time = Some(chrono::Utc::now());
         config::Config::store(&cfg)?;
     } else {

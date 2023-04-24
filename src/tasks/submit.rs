@@ -46,7 +46,7 @@ pub fn submit(path: &Path) -> anyhow::Result<()> {
     let res = client
         .post(url)
         .json(&request_body)
-        .header(COOKIE, format!("token={}", cfg.token.unwrap()))
+        .header(COOKIE, format!("token={}", cfg.token))
         .send()?;
 
     if res.status().is_success() {

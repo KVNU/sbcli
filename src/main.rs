@@ -1,6 +1,7 @@
 mod auth;
 mod commands;
 mod config;
+mod requests;
 mod tasks;
 mod util;
 
@@ -13,6 +14,7 @@ use config::Config;
 
 use crate::commands::configure;
 use crate::commands::login;
+use crate::requests::ApiClient;
 
 #[derive(Debug, Parser)]
 struct Cli {
@@ -26,11 +28,8 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
-    #[cfg(debug_assertions)]
-    Dbg {
-        #[arg(short, long)]
-        print_cli: bool,
-    },
+    // #[cfg(debug_assertions)]
+    Dbg,
     /// Configure the CLI
     Configure {
         #[arg(short, long)]
@@ -61,14 +60,21 @@ enum Commands {
     /// Show your progress
     Progress,
     /// Work on the next task, or the task with the given ID
-    Start { task_id: Option<usize> },
+    Start {
+        task_id: Option<usize>,
+    },
     /// Submit an exercise to SmartBeans
-    Submit { path: PathBuf },
+    Submit {
+        path: PathBuf,
+    },
     /// Run the tests for a local exercise
-    Test { path: PathBuf },
+    Test {
+        path: PathBuf,
+    },
 }
 
-fn main() -> anyhow::Result<()> {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     // Using custom config
@@ -78,11 +84,31 @@ fn main() -> anyhow::Result<()> {
     }
 
     match &cli.command {
-        #[cfg(debug_assertions)]
-        Some(Commands::Dbg { print_cli: _ }) => {
-            let detailed_submissions = tasks::get::get_detailed_submissions(521)?;
-            dbg!(&detailed_submissions);
-            dbg!(detailed_submissions.len());
+        // #[cfg(debug_assertions)]
+        Some(Commands::Dbg) => {
+            let start = std::time::Instant::now();
+
+            let api_client = ApiClient::new()?;
+            let tasks = api_client.get_tasks().await?;
+
+            let mut task_futures = Vec::new();
+            for task in tasks {
+                println!("task: {}, {}", task.taskid, task.task_description.shortname);
+                let future = api_client.get_detailed_submissions(task.taskid);
+                task_futures.push(future);
+            }
+
+            let all_tasks = futures::future::join_all(task_futures).await;
+            let all_tasks = all_tasks.into_iter().flatten().collect::<Vec<_>>();
+
+            // for task in all_tasks {
+            //     println!("task: {}, {}", task.taskid, task.task_description.shortname);
+            //     let _ = requests::get_detailed_submissions(task.taskid, &client).await?;
+            // }
+
+            let elapsed = start.elapsed();
+            dbg!(all_tasks.len());
+            dbg!(elapsed);
         }
 
         Some(Commands::Configure {
