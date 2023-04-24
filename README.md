@@ -17,6 +17,8 @@ Some features are still missing, but the core functionality is there.
 
 We have releases for Linux, Windows and MacOS. You can find them [here](https://github.com/KVNU/sbcli/releases).
 
+Put the executable in your `PATH` and you're good to go.
+
 ## Building from source
 
 ### Prerequisites
