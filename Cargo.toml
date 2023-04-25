@@ -11,18 +11,21 @@ lto = true
 
 [dependencies]
 anyhow = "1.0.70"
-clap = { version = "4.2.2", features = ["std", "derive"], default-features = false }
+clap = { version = "4.2.2", features = ["derive"] }
 colored = "2.0.0"
 confy = { version = "0.5.1", features = ["ron_conf"], default-features = false }
 convert_case = "0.6.0"
 dirs = "5.0.0"
 itertools = "0.10.5"
 open = "4.0.2"
-reqwest = { version = "0.11.16", features = ["json"]}
+reqwest = { version = "0.11.16", features = ["json"] }
 rpassword = "7.2.0"
 serde = { version = "1.0.160", default-features = false }
 serde_json = { default-features = false, version = "1.0.96" }
 serde_with = { default-features = false, version = "2.3.2" }
-chrono = { version = "0.4.24", features = ["serde", "clock"], default-features = false }
-tokio = { version = "1.27.0", features = ["full"] , default-features = false}
+chrono = { version = "0.4.24", features = [
+    "serde",
+    "clock",
+], default-features = false }
+tokio = { version = "1.27.0", features = ["full"], default-features = false }
 futures = "0.3.28"
