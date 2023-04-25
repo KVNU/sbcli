@@ -52,20 +52,29 @@ chmod +x $BINARY_NAME
 
 # Try to move the binary to a directory in PATH
 if [[ $platform == "x86_64-pc-windows-msvc" ]]; then
-  install_dir="C:/Program Files/$REPO_NAME"
-  mkdir -p "$install_dir"
-  echo "Moving binary to $install_dir"
+  # install_dir="C:/Program Files/$REPO_NAME"
+  # mkdir -p "$install_dir"
+  # echo "Moving binary to $install_dir"
 
-  if mv $BINARY_NAME $install_dir 2>/dev/null; then
-    echo "Installation completed. The binary is located at $install_dir/$BINARY_NAME"
-  else
-    echo "Failed to move binary. Please run this script as an administrator."
-  fi
+  # if mv $BINARY_NAME $install_dir 2>/dev/null; then
+  #   echo "Installation completed. The binary is located at $install_dir/$BINARY_NAME"
+  # else
+  #   echo "Failed to move binary. Please run this script as an administrator."
+  # fi
+  install_dir="$HOME/.local/bin"
+  echo "Moving binary to $install_dir"
+  mkdir -p "$install_dir"
+  echo "Installation completed. The binary is located at $install_dir/$BINARY_NAME"
+  echo "Please ensure that $install_dir is in PATH."
 
 else
-  install_dir="/usr/local/bin"
-  echo "Moving binary to $install_dir with elevated privileges"
-  sudo mv $BINARY_NAME $install_dir
-
+  # install_dir="/usr/local/bin"
+  # echo "Moving binary to $install_dir with elevated privileges"
+  # sudo mv $BINARY_NAME $install_dir
+  install_dir="$HOME/.local/bin"
+  echo "Moving binary to $install_dir"
+  mkdir -p "$install_dir"
+  mv $BINARY_NAME $install_dir
   echo "Installation completed. The binary is located at $install_dir/$BINARY_NAME"
+  echo "Please ensure that $install_dir is in PATH."
 fi

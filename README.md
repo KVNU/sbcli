@@ -1,8 +1,8 @@
 # About
 
-> [This](https://github.com/kvnu/sbcli.git) repository is currently mirrored on [GitLab](https://gitlab.gwdg.de/l.keiser/sbcli.git).
+> [This](https://gitlab.gwdg.de/smart/smartbeans-cli) repository is currently being one-way mirrored on [GitHub](https://github.com/kvnu/sbcli.git) to provide automated releases.
 
-Current `MVP` version: `0.1.0`
+Current `MVP` version: `0.1.4`
 Some features are still missing, but the core functionality is there.
 
 `sbcli` is a command line interface for the SmartBeans[^sb_gitlab] application.
