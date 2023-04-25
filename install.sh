@@ -44,6 +44,7 @@ binary_url="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$latest_
 
 if [[ $platform == "x86_64-pc-windows-msvc" ]]; then
   binary_url+=".exe"
+  BINARY_NAME+=".exe"
 fi
 
 echo "Downloading binary from: $binary_url"
